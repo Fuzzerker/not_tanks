@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://c17j6g5c7ot10"]
+
+[ext_resource type="Texture2D" uid="uid://cwq5abcgewfck" path="res://sprites/#1 - Transparent Icons.png" id="1_rwiqr"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q56mv"]
+atlas = ExtResource("1_rwiqr")
+region = Rect2(96.06, 318.799, 32, 32)
+
+[node name="DigIcon" type="Sprite2D"]
+scale = Vector2(0.5, 0.5)
+texture = SubResource("AtlasTexture_q56mv")

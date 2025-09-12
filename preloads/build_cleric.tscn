@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://chhef2fmbkinb"]
+
+[ext_resource type="Texture2D" uid="uid://dr6d8rol8x6m8" path="res://sprites/rogues.png" id="1_qtf3k"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_n603m"]
+atlas = ExtResource("1_qtf3k")
+region = Rect2(191.737, 63.553, 32, 32)
+
+[node name="Cleric" type="Sprite2D"]
+texture = SubResource("AtlasTexture_n603m")
