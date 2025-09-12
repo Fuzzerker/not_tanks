@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://by3dirgdn0xiw"]
+[gd_scene load_steps=15 format=3 uid="uid://by3dirgdn0xiw"]
 
 [ext_resource type="Texture2D" uid="uid://csryrkfj4lfga" path="res://sprites/maptiles.png" id="1_v4jwb"]
 [ext_resource type="Script" uid="uid://c6mx4agli1n6c" path="res://scripts/camera_control.gd" id="2_45neo"]
@@ -6,6 +6,9 @@
 [ext_resource type="Script" uid="uid://dcggyg72s2vwi" path="res://scripts/terrain_gen.gd" id="2_pgsxn"]
 [ext_resource type="PackedScene" uid="uid://chdl2k2fcmqmt" path="res://preloads/worker.tscn" id="5_e378v"]
 [ext_resource type="Script" uid="uid://c2fafyvfge7ag" path="res://agua_value.gd" id="5_n603m"]
+[ext_resource type="Script" uid="uid://ctohpiorbe3xm" path="res://seeds.gd" id="6_q56mv"]
+[ext_resource type="Script" uid="uid://dde046qn2et2j" path="res://food_label.gd" id="7_kr0b5"]
+[ext_resource type="PackedScene" uid="uid://46gfvt0lk8vo" path="res://preloads/cleric.tscn" id="7_y7lrh"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_45neo"]
 texture = ExtResource("1_v4jwb")
@@ -423,6 +426,13 @@ layout_mode = 2
 layout_mode = 2
 text = "Dig"
 
+[node name="MarginContainer3" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Plant" type="Button" parent="Camera2D/CanvasLayer/Panel/VBoxContainer/HBoxContainer/MarginContainer3"]
+layout_mode = 2
+text = "Plant"
+
 [node name="PanelContainer" type="PanelContainer" parent="Camera2D/CanvasLayer/Panel/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 theme = SubResource("Theme_q56mv")
@@ -442,29 +452,78 @@ grow_horizontal = 0
 [node name="VBoxContainer" type="VBoxContainer" parent="Camera2D/CanvasLayer/Panel2"]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer"]
+[node name="Agua" type="HBoxContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer"]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/HBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Agua"]
 layout_mode = 2
 theme_override_constants/margin_left = 9
 theme_override_constants/margin_right = 25
 
-[node name="Label" type="Label" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/HBoxContainer/MarginContainer"]
+[node name="Label" type="Label" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Agua/MarginContainer"]
 layout_mode = 2
 text = "Agua: "
 
-[node name="MarginContainer2" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/HBoxContainer"]
+[node name="MarginContainer2" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Agua"]
 layout_mode = 2
 theme_override_constants/margin_right = 8
 
-[node name="Label" type="Label" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/HBoxContainer/MarginContainer2"]
+[node name="Label" type="Label" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Agua/MarginContainer2"]
 layout_mode = 2
 text = "0"
 script = ExtResource("5_n603m")
 
+[node name="Seeds" type="HBoxContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Seeds"]
+layout_mode = 2
+theme_override_constants/margin_left = 9
+theme_override_constants/margin_right = 25
+
+[node name="Label" type="Label" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Seeds/MarginContainer"]
+layout_mode = 2
+text = "Seeds: "
+
+[node name="MarginContainer2" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Seeds"]
+layout_mode = 2
+theme_override_constants/margin_right = 8
+
+[node name="Label" type="Label" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Seeds/MarginContainer2"]
+layout_mode = 2
+text = "0"
+script = ExtResource("6_q56mv")
+
+[node name="Food" type="HBoxContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Food"]
+layout_mode = 2
+theme_override_constants/margin_left = 9
+theme_override_constants/margin_right = 25
+
+[node name="Label" type="Label" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Food/MarginContainer"]
+layout_mode = 2
+text = "Food: "
+
+[node name="MarginContainer2" type="MarginContainer" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Food"]
+layout_mode = 2
+theme_override_constants/margin_right = 8
+
+[node name="Label" type="Label" parent="Camera2D/CanvasLayer/Panel2/VBoxContainer/Food/MarginContainer2"]
+layout_mode = 2
+text = "0"
+script = ExtResource("7_kr0b5")
+
+[node name="Cleric" parent="." instance=ExtResource("7_y7lrh")]
+
 [node name="Worker" parent="." instance=ExtResource("5_e378v")]
 position = Vector2(54, -55)
 
+[node name="Worker2" parent="." instance=ExtResource("5_e378v")]
+
+[node name="Worker3" parent="." instance=ExtResource("5_e378v")]
+
 [connection signal="pressed" from="Camera2D/CanvasLayer/Panel/VBoxContainer/HBoxContainer/MarginContainer2/dig" to="TileMapLayer" method="_on_dig_pressed"]
+[connection signal="pressed" from="Camera2D/CanvasLayer/Panel/VBoxContainer/HBoxContainer/MarginContainer3/Plant" to="TileMapLayer" method="_on_plant_pressed"]
 [connection signal="pressed" from="Camera2D/CanvasLayer/Panel/VBoxContainer/HBoxContainer/PanelContainer/BuildCleric" to="TileMapLayer" method="_on_build_cleric_pressed"]

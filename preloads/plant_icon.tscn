@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://cxxd6ipobl1nd"]
+
+[ext_resource type="Texture2D" uid="uid://d1eon62mf5w8" path="res://sprites/Seeds.png" id="1_obt08"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nxh17"]
+atlas = ExtResource("1_obt08")
+region = Rect2(80, 16, 16, 16)
+
+[node name="PlantIcon" type="Sprite2D"]
+texture = SubResource("AtlasTexture_nxh17")

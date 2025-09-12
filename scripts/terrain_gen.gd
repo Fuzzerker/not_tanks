@@ -10,6 +10,7 @@ var build_cleric = preload("res://preloads/build_cleric.tscn")
 var cleric = preload("res://preloads/cleric.tscn")
 
 var dig_icon = preload("res://preloads/dig_icon.tscn")
+var plant_icon = preload("res://preloads/plant_icon.tscn")
 
 func _ready() -> void:
 	_set_terrain()
@@ -27,12 +28,38 @@ func _set_terrain():
 func _on_dig_pressed() -> void:
 	PlayerActions.current_action = "dig" # Replace with function body.
 	
+func _on_plant_pressed() -> void:
+	PlayerActions.current_action = "plant" 
 	
-func _build_on_completed(clicked_cell, marker):
+func _build_dig_on_completed(clicked_cell, marker):
 	var on_completed = func():
 		set_cell(clicked_cell, terrain_source, water_atlas )
 		marker.queue_free()	
 		Resources.agua += 1
+	
+	return on_completed	
+
+
+
+func _build_plant_on_completed(clicked_cell, marker: Sprite2D):
+	var on_completed = func():
+		var old_atlas: AtlasTexture = marker.texture
+		var new_atlas := AtlasTexture.new()
+		new_atlas.atlas = preload("res://sprites/Seedling.png")
+		new_atlas.region = Rect2(
+			#skip 13 columns and 1 ro
+			Vector2(13 * 16, 16),
+			old_atlas.region.size
+		)
+		marker.texture = new_atlas
+		var plant = {
+			"marker" : marker,
+			"cell":clicked_cell,
+			"position":marker.position
+		}
+		PlantManager._register(plant)
+		#marker currently has an atlas texture type.  I want to use the same base texture but update the atlas coords
+		
 	
 	return on_completed	
 	
@@ -44,7 +71,21 @@ func _create_work_request(clicked_cell, marker):
 			"position": get_local_mouse_position(),
 			"status": "pending",
 			"effort": 100,
-			"on_complete": _build_on_completed(clicked_cell, marker)
+			"on_complete": _build_dig_on_completed(clicked_cell, marker)
+		}
+		WorkQueue._add_work(request)
+		
+	if PlayerActions.current_action == "plant":
+		if Resources.seeds == 0:
+			return
+		Resources.seeds -= 1
+		var request = {
+			"type": "plant",
+			"cell": clicked_cell,
+			"position": get_local_mouse_position(),
+			"status": "pending",
+			"effort": 100,
+			"on_complete": _build_plant_on_completed(clicked_cell, marker)
 		}
 		WorkQueue._add_work(request)
 		
@@ -58,28 +99,40 @@ func _create_work_icon():
 		var cell_pos = local_to_map(mouse_pos)
 		inst.position = map_to_local(cell_pos)
 		return inst
+	if PlayerActions.current_action == "plant":
+		if Resources.seeds <= 0:
+			return
+		var inst = plant_icon.instantiate()
+		add_child(inst)
+		var mouse_pos = get_local_mouse_position()
+		var cell_pos = local_to_map(mouse_pos)
+		inst.position = map_to_local(cell_pos)
+		return inst
 	
 var bcl = null	
 	
 func _place_cleric():
-	var cl = cleric.instantiate()
-	cl.position = get_local_mouse_position()
-	bcl.queue_free()
-	PlayerActions.current_action = null
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	add_child(cl)
+	if Store._buy_cleric():
+		var cl = cleric.instantiate()
+		cl.position = get_local_mouse_position()
+		bcl.queue_free()
+		PlayerActions.current_action = null
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		add_child(cl)
 	
 func _set_tile_action(clicked_cell):
 	if WorkQueue._has_work(clicked_cell):
 		return
 	var marker = _create_work_icon()
 	_create_work_request(clicked_cell, marker)
+	
 
 func _tilemap_click():
-	print("click ")
+	if log:
+		print("click ")
 	var local_mouse_pos = get_local_mouse_position()              
 	var clicked_cell = local_to_map(local_mouse_pos)
-	if PlayerActions.current_action == "dig":
+	if PlayerActions.current_action == "dig" || PlayerActions.current_action == "plant":
 		_set_tile_action(clicked_cell)
 	if PlayerActions.current_action == "place_cleric":
 		_place_cleric()

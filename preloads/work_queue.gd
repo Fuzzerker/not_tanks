@@ -12,12 +12,16 @@ func _do_work(cell, effort) -> bool:
 	for request in work_requests:
 		if request.cell == cell:
 			request.effort -= effort
-			if request.effort <= 0:
+			if request.effort <= 0 and request["on_complete"] != null:				
+				work_requests.erase(request)
 				request["on_complete"].call()
+				
 				return true
 	return false
 
 func _add_work(request):
+	
+		
 	for rq in work_requests:
 		if rq.cell == request.cell:
 			return

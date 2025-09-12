@@ -1,40 +1,82 @@
-extends Sprite2D
+extends "res://preloads/idler.gd"
 
 var active_work = null
 var effort = 10
-var speed = 100.0 # units per second, tweak as needed
+var stamina = 100000
+var max_stamina = 100000
+
+var rest_distance = 60
+
+var action = "idle"
+
+func _ready():
+	#log = true
+	is_idle = true
+	speed = 100.0
+	CharacterRegistry._add_character({"ref":self, "type":"worker"})
+
 
 func _process(delta: float):
-	if active_work:
-		var dist = position.distance_squared_to(active_work.position)
-		if dist > 0.3:
-			_move_to_work(delta)
-		else:
-			_do_work()
-	else:
+	if log:
+		print("process ", target_position)
+	if stamina <= 10:
+		if action != "rest":
+			if log:
+				print("trying to find closest cleric")
+			var closest_cleric = CharacterRegistry._get_closest_cleric(position)
+			if closest_cleric != null:
+				if log:
+					print("foudn closest cleric")
+				target_position = closest_cleric
+				action = "rest"
+			else:
+				if log:
+					print("no closest cleric idling")
+				super(delta)
+		
+	else: if not active_work:
 		_find_work()
-
-
-func _move_to_work(delta: float):
-	# Smooth movement toward active_work.position
-	var dir = (active_work.position - position).normalized()
+	var target_dist = .55
+	if action == "rest":
+		target_dist = rest_distance
+	if _has_arrived(target_dist):
+		if log:
+			print("arrived")
+		if action == "rest":
+			var closest_cleric = CharacterRegistry._get_closest_cleric(position)
+			if closest_cleric != null:
+				if log:
+					print("foudn closest cleric")
+				target_position = closest_cleric
+				action = "rest"
+			stamina += 10
+			if stamina >= max_stamina:
+				stamina = max_stamina
+				action = "idle"
+				is_idle = true
+		else: if active_work:
+			_do_work()
+		else:
+			super(delta)
+	else:
+		_move_toward(delta)
 	
-	# Flip the sprite based on horizontal direction
-	if dir.x > 0:
-		flip_h = true  # Facing right
-	elif dir.x < 0:
-		flip_h = false   # Facing left
 	
-	position += dir * speed * delta
-
+		
+		
 
 func _do_work():
+	if stamina < 0:
+		return
 	if WorkQueue._do_work(active_work.cell, effort):
 		active_work = null
-	# Optional: clear active_work if done
-	# if WorkQueue._is_done(active_work.cell):
-	#     active_work = null
+	stamina -= effort
 
-
-func _find_work():
+func _find_work() -> bool:
+	if log:
+		print("_find_work ")
 	active_work = WorkQueue._claim_work(position)
+	if active_work != null:
+		print("found work ", active_work["type"])
+		target_position = active_work.position
+	return active_work != null
