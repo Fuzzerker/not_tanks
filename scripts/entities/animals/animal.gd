@@ -13,7 +13,7 @@ func _ready() -> void:
 	AnimalManager._register(self)
 
 func _get_info() -> Dictionary:
-	var info = super()
+	var info: Dictionary = super()
 	info["current_food_target"] = current_food_target != null
 	info["eating_distance"] = eating_distance
 	return info
@@ -50,7 +50,7 @@ func _consume_food(_food) -> bool:
 func _eat(food) -> void:
 	current_food_target = null
 	while(hunger < 100):
-		var more = _consume_food(food)
+		var _more: bool = _consume_food(food)
 		
 		hunger += 1
 	
@@ -59,12 +59,12 @@ func _eat(food) -> void:
 
 # Serialization methods
 func serialize() -> Dictionary:
-	var data = super.serialize()
+	var data: Dictionary = super.serialize()
 	data["eating_distance"] = eating_distance
 	# Note: current_food_target is not serialized as it's a runtime reference
 	return data
 
-func deserialize(data: Dictionary):
+func deserialize(data: Dictionary) -> void:
 	super.deserialize(data)
 	if data.has("eating_distance"):
 		eating_distance = data.eating_distance

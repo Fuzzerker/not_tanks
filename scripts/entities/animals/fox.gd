@@ -25,11 +25,11 @@ func _consume_food(food) -> bool:
 
 # Serialization methods (inherits from animal.gd which handles most of it)
 func serialize() -> Dictionary:
-	var data = super.serialize()
+	var data: Dictionary = super.serialize()
 	# Fox-specific data (if any) would go here
 	return data
 
-func deserialize(data: Dictionary):
+func deserialize(data: Dictionary) -> void:
 	super.deserialize(data)
 	# Fox-specific deserialization (if any) would go here
 	

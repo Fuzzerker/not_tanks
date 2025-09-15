@@ -4,13 +4,13 @@ var speed: float = 100.0
 var target_position: Vector2
 var log: bool = false
 var pos_label: Label
-func _get_info():
+func _get_info() -> Dictionary:
 	return {
 		"speed":speed,
 		"target_position":target_position
 	}
 
-func _ready():
+func _ready() -> void:
 	_generate_label()
 	
 
@@ -31,8 +31,8 @@ func _generate_label() -> void:
 	pos_label.position = Vector2(0, -texture.get_height() / 2 - 10)
 
 func _move_toward(delta: float) -> void:
-	var direction = target_position - position
-	var distance = direction.length()
+	var direction: Vector2 = target_position - position
+	var distance: float = direction.length()
 	
 	if distance > 0.01:
 		# Flip sprite based on horizontal direction
@@ -43,7 +43,7 @@ func _move_toward(delta: float) -> void:
 
 func _has_arrived(threshold: float) -> bool:
 	threshold *= Engine.time_scale
-	var has_arrived = position.distance_squared_to(target_position) < threshold * threshold
+	var has_arrived: bool = position.distance_squared_to(target_position) < threshold * threshold
 	if log:
 		print("has_arrived = ", has_arrived, " @", position, " vs ", target_position)
 	return has_arrived
@@ -57,7 +57,7 @@ func serialize() -> Dictionary:
 		"log": log
 	}
 
-func deserialize(data: Dictionary):
+func deserialize(data: Dictionary) -> void:
 	if data.has("position"):
 		position = Vector2(data.position.x, data.position.y)
 	if data.has("speed"):

@@ -2,27 +2,27 @@ extends Node
 
 
 func _generate_name() -> String:
-	var first_name = generate_pronounceable_word()
-	var last_name = generate_pronounceable_word()
+	var first_name: String = generate_pronounceable_word()
+	var last_name: String = generate_pronounceable_word()
 	return first_name + " " + last_name
 	
 	
-var consonants := [
+var consonants: Array[String] = [
 	"b","c","d","f","g","h","j","k","l","m","n","p","r","s","t","v","w","y","z",
 	"bl","br","cl","cr","dr","fl","fr","gl","gr","pl","pr","sl","sm","sn","sp","st","str","sw","tr","tw"
 ]
 
-var vowels := [
+var vowels: Array[String] = [
 	"a","e","i","o","u",
 	"ai","au","ea","ee","ie","oa","oo","ou","ui"
 ]
 
 func generate_pronounceable_word() -> String:
-	var length = randi_range(3, 7)
-	var word := ""
+	var length: int = randi_range(3, 7)
+	var word: String = ""
 	
 	# Randomly decide if we start with vowel or consonant
-	var use_vowel = randf() < 0.5
+	var use_vowel: bool = randf() < 0.5
 	
 	while word.length() < length:
 		if use_vowel:

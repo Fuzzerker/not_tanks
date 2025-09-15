@@ -5,16 +5,16 @@ extends "res://scripts/entities/base/living_entity.gd"
 enum Action { IDLE, WORK, REST, EATING }
 
 var action: Action = Action.IDLE
-var active_work = null
+var active_work: WorkRequest = null
 
 var effort: int = 10
 var stamina: int = 1000
 var max_stamina: int = 1000
 var rest_distance: float = 60.0
-var character_name = ""
+var character_name: String = ""
 
 # Eating system - workers eat from stores/food sources
-var current_food_source = null
+var current_food_source: Node2D = null
 var eating_distance: float = 5.0
 
 func _ready() -> void:
@@ -28,7 +28,7 @@ func _ready() -> void:
 	CharacterRegistry._add_character(self)
 
 func _get_info() -> Dictionary:
-	var info = super()
+	var info: Dictionary = super()
 	info["character_name"] = character_name
 	info["effort"] = effort
 	info["stamina"] = stamina
@@ -73,14 +73,14 @@ func _handle_hunger(delta: float) -> void:
 		else:
 			_move_toward(delta)
 
-func _find_food_source():
+func _find_food_source() -> Node2D:
 	# Workers can eat from stores or food stockpiles
 	# For now, let's assume they can eat from a global food resource
 	# In a more complex system, this would find actual food buildings
 	if Resources.food > 0:
 		# Create a virtual food source at the worker's position
 		# In a real implementation, this would be a food building
-		var food_source = Node2D.new()
+		var food_source: Node2D = Node2D.new()
 		food_source.position = position  # For now, eat "in place"
 		return food_source
 	return null
@@ -128,7 +128,6 @@ func _process_work(delta: float) -> void:
 		_move_toward(delta)
 
 func _process_idle(_delta: float) -> void:
-
 	if active_work == null:
 		_find_work()
 	
@@ -148,7 +147,7 @@ func _find_work() -> void:
 	active_work = WorkQueue._claim_work(position)
 	if active_work:
 		if log:
-			print("Found work:", active_work["type"])
+			print("Found work:", active_work.type)
 		action = Action.WORK
 		target_position = active_work.position
 		print("setting target positiong to active ork position in _find_ork")
@@ -158,9 +157,9 @@ func _switch_to_idle() -> void:
 	action = Action.IDLE
 	_start_idle()
 
-func _switch_to_rest(delta) -> void:
-	var cleric = CharacterRegistry._get_closest_cleric(position)
-	if cleric:
+func _switch_to_rest(delta: float) -> void:
+	var cleric: Vector2 = CharacterRegistry._get_closest_cleric(position)
+	if cleric != Vector2.ZERO:
 		target_position = cleric
 		action = Action.REST
 		_process_rest(delta)
@@ -170,7 +169,7 @@ func _switch_to_rest(delta) -> void:
 
 # Serialization methods
 func serialize() -> Dictionary:
-	var data = super.serialize()
+	var data: Dictionary = super.serialize()
 	data["action"] = action
 	data["effort"] = effort
 	data["stamina"] = stamina
@@ -181,7 +180,7 @@ func serialize() -> Dictionary:
 	# Note: active_work and current_food_source are not serialized as they're runtime references
 	return data
 
-func deserialize(data: Dictionary):
+func deserialize(data: Dictionary) -> void:
 	super.deserialize(data)
 	if data.has("action"):
 		action = data.action

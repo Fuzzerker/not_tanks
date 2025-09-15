@@ -10,15 +10,15 @@ var grow_interval: float = .1
 # Internal timer
 var _time_accumulator: float = 0.0
 
-func _ready():
+func _ready() -> void:
 	randomize()
 
 func _get_closest_plant(pos: Vector2) -> Plant:
 	var closest_plant: Plant = null
-	var closest_dist := INF
+	var closest_dist: float = INF
 
-	for plant in _plants:
-		var dist = pos.distance_squared_to(plant.position)
+	for plant: Plant in _plants:
+		var dist: float = pos.distance_squared_to(plant.position)
 		if dist < closest_dist:
 			closest_dist = dist
 			closest_plant = plant
@@ -41,12 +41,12 @@ func _register(plant: Plant) -> void:
 	
 
 func _update_plant_sprite(plant: Plant) -> void:
-	var mrkr = plant.marker
-	var health_level = int(plant.health / 25) +1  # Every 25 health units = 1 sprite level
-	var atlas_y_offset = health_level * 16  # 16 pixels per level
+	var mrkr: Sprite2D = plant.marker
+	var health_level: int = int(plant.health / 25) + 1  # Every 25 health units = 1 sprite level
+	var atlas_y_offset: int = health_level * 16  # 16 pixels per level
 	
 	# Calculate the base position (assuming sprite starts at top of atlas)
-	var base_y = 0  # Adjust this based on your sprite atlas layout
+	var base_y: int = 0  # Adjust this based on your sprite atlas layout
 	mrkr.texture.region = Rect2(
 		Vector2(mrkr.texture.region.position.x, base_y + atlas_y_offset),
 		mrkr.texture.region.size
@@ -63,7 +63,7 @@ func _consume_plant(plant):
 func _gro_all() -> void:
 	for plant in _plants:
 		# Check if plant is ready for harvest (at full health)
-		if plant.health >= plant.max_health:
+		if plant.total_gro >= plant.max_total_gro:
 			var req := WorkRequest.new()
 			req.type = "harvest"
 			req.cell = plant.cell
@@ -77,7 +77,7 @@ func _gro_all() -> void:
 			
 			req.on_complete = func():
 				print("harvested")
-				Resources.food += 1
+				Resources.food += int(plant.health / 10)
 				Resources.seeds += randi_range(1, 3)
 				plant.marker.queue_free()
 				plant.queue_free()

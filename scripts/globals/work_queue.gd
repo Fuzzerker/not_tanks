@@ -3,13 +3,13 @@ extends Node
 var work_requests: Array[WorkRequest] = []
 
 func _has_work(cell: Vector2i) -> bool:
-	for request in work_requests:
+	for request: WorkRequest in work_requests:
 		if request.cell == cell:
 			return true
 	return false 
 
 func _do_work(cell: Vector2i, effort: int) -> bool:
-	for request in work_requests:
+	for request: WorkRequest in work_requests:
 		if request.cell == cell:
 			request.effort -= effort
 			if request.effort <= 0 and request.on_complete.is_valid():
@@ -19,15 +19,15 @@ func _do_work(cell: Vector2i, effort: int) -> bool:
 			return false		
 	return true
 	
-func _destroy_work(pos: Vector2):
-	for rq in work_requests:
+func _destroy_work(pos: Vector2) -> void:
+	for rq: WorkRequest in work_requests:
 		if rq.position == pos:
 			work_requests.erase(rq)
 			rq.queue_free()
 			return
 
 func _add_work(request: WorkRequest) -> void:
-	for rq in work_requests:
+	for rq: WorkRequest in work_requests:
 		if rq.cell == request.cell:
 			print("Work request rejected - duplicate at cell ", request.cell)
 			return
@@ -36,12 +36,12 @@ func _add_work(request: WorkRequest) -> void:
 
 func _claim_work(position: Vector2) -> WorkRequest:
 	var closest_request: WorkRequest = null
-	var closest_dist := INF
+	var closest_dist: float = INF
 
-	for request in work_requests:
+	for request: WorkRequest in work_requests:
 		if request.status != "pending":
 			continue
-		var dist = position.distance_squared_to(request.position)
+		var dist: float = position.distance_squared_to(request.position)
 		if dist < closest_dist:
 			closest_dist = dist
 			closest_request = request
@@ -52,8 +52,8 @@ func _claim_work(position: Vector2) -> WorkRequest:
 
 # Serialize work queue data for saving
 func serialize() -> Dictionary:
-	var serialized_requests = []
-	for request in work_requests:
+	var serialized_requests: Array = []
+	for request: WorkRequest in work_requests:
 		if request.has_method("serialize"):
 			serialized_requests.append(request.serialize())
 	
@@ -70,8 +70,8 @@ func deserialize(data: Dictionary) -> void:
 	
 	# Restore work requests
 	if data.has("work_requests"):
-		for request_data in data.work_requests:
-			var request = WorkRequest.new()
+		for request_data: Dictionary in data.work_requests:
+			var request: WorkRequest = WorkRequest.new()
 			request.deserialize(request_data)
 			work_requests.append(request)
 	

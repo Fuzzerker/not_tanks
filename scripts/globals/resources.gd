@@ -1,9 +1,9 @@
 extends Node
 
 
-var agua = 0
-var seeds = 5
-var food = 0
+var agua: int = 0
+var seeds: int = 5
+var food: int = 0
 
 # Serialize resources data for saving
 func serialize() -> Dictionary:

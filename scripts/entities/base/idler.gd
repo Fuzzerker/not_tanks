@@ -1,17 +1,17 @@
 extends "res://scripts/entities/base/mover.gd"
 
-var MAX_OFFSET = 50
+var MAX_OFFSET: int = 50
 
 var pause_time: float = 0.0
 var idle_origin: Vector2
 
-func _ready():
+func _ready() -> void:
 	super._ready()
 	speed = 20
 	_start_idle()
 	
 
-func _process(delta: float):
+func _process(delta: float) -> void:
 	if log:
 		print("idle_process")
 	if pause_time > 0:
@@ -24,13 +24,13 @@ func _process(delta: float):
 	else:
 		_move_toward(delta)
 
-func _pick_new_idle_target():
+func _pick_new_idle_target() -> void:
 	if log:
 		print("_pick_new_idle_target")
-	var idle_offset = Vector2(randf_range(-MAX_OFFSET, MAX_OFFSET), randf_range(-MAX_OFFSET, MAX_OFFSET))
+	var idle_offset: Vector2 = Vector2(randf_range(-MAX_OFFSET, MAX_OFFSET), randf_range(-MAX_OFFSET, MAX_OFFSET))
 	target_position = idle_origin + idle_offset
 
-func _start_idle():
+func _start_idle() -> void:
 	idle_origin = position
 	_pick_new_idle_target()
 
@@ -42,7 +42,7 @@ func serialize() -> Dictionary:
 	data["idle_origin"] = {"x": idle_origin.x, "y": idle_origin.y}
 	return data
 
-func deserialize(data: Dictionary):
+func deserialize(data: Dictionary) -> void:
 	super.deserialize(data)
 	if data.has("MAX_OFFSET"):
 		MAX_OFFSET = data.MAX_OFFSET

@@ -8,7 +8,7 @@ var health: int = 100
 var hunger: int = 100
 var hungry_interval: float = 1.0
 var hunger_threshold: int = 50  # When to start looking for food
-var type = "living_entity"
+var type: String = "living_entity"
 # Internal timer for hunger decay
 var _time_accumulator: float = 0.0
 
@@ -17,7 +17,7 @@ func _ready() -> void:
 	InformationRegistry._register(self)
 
 func _get_info() -> Dictionary:
-	var info = super()
+	var info: Dictionary = super()
 	info["max_health"] = max_health
 	info["health"] = health
 	info["hunger"] = hunger
@@ -75,7 +75,7 @@ func _die() -> void:
 
 # Serialization methods
 func serialize() -> Dictionary:
-	var data = super.serialize()
+	var data: Dictionary = super.serialize()
 	data["max_health"] = max_health
 	data["health"] = health
 	data["hunger"] = hunger
@@ -85,7 +85,7 @@ func serialize() -> Dictionary:
 	data["_time_accumulator"] = _time_accumulator
 	return data
 
-func deserialize(data: Dictionary):
+func deserialize(data: Dictionary) -> void:
 	super.deserialize(data)
 	if data.has("max_health"):
 		max_health = data.max_health

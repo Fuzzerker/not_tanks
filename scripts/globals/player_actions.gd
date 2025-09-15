@@ -1,7 +1,7 @@
 extends Node
 
 
-var current_action = ""
+var current_action: String = ""
 
 # Serialize player actions data for saving
 func serialize() -> Dictionary:

@@ -16,7 +16,7 @@ extends Camera2D
 var target_position: Vector2
 var target_zoom: Vector2
 
-func _ready():
+func _ready() -> void:
 	# Initialize target position and zoom to current values
 	target_position = global_position
 	target_zoom = zoom
@@ -27,7 +27,7 @@ func _ready():
 	# limit_top = -1000
 	# limit_bottom = 1000
 
-func _process(delta):
+func _process(delta: float) -> void:
 	handle_camera_input(delta)
 	
 	if smooth_movement:
@@ -44,9 +44,9 @@ func _process(delta):
 		# Direct zoom
 		zoom = target_zoom
 
-func handle_camera_input(delta):
+func handle_camera_input(delta: float) -> void:
 	# Handle panning
-	var input_vector = Vector2.ZERO
+	var input_vector: Vector2 = Vector2.ZERO
 	
 	# Check for arrow key inputs
 	if Input.is_action_pressed("ui_left"):
@@ -63,14 +63,14 @@ func handle_camera_input(delta):
 		input_vector = input_vector.normalized()
 		
 		# Calculate movement (adjust speed based on zoom level for better feel)
-		var movement = input_vector * pan_speed * delta * (1.0 / target_zoom.x)
+		var movement: Vector2 = input_vector * pan_speed * delta * (1.0 / target_zoom.x)
 		target_position += movement
 
-func _input(event):
+func _input(event: InputEvent) -> void:
 	# Handle zoom input
 	if event is InputEventMouseButton:
 		if event.pressed:
-			var zoom_factor = 1.0
+			var zoom_factor: float = 1.0
 			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				zoom_factor = 1.0 + zoom_speed
 				zoom_in(zoom_factor)
@@ -90,21 +90,21 @@ func _input(event):
 			KEY_0:  # Reset zoom to 1.0
 				reset_zoom()
 
-func zoom_in(factor: float):
-	var new_zoom = target_zoom * factor
+func zoom_in(factor: float) -> void:
+	var new_zoom: Vector2 = target_zoom * factor
 	# Clamp to maximum zoom
 	if new_zoom.x <= max_zoom and new_zoom.y <= max_zoom:
 		target_zoom = new_zoom
 
-func zoom_out(factor: float):
-	var new_zoom = target_zoom * factor
+func zoom_out(factor: float) -> void:
+	var new_zoom: Vector2 = target_zoom * factor
 	# Clamp to minimum zoom
 	if new_zoom.x >= min_zoom and new_zoom.y >= min_zoom:
 		target_zoom = new_zoom
 
-func reset_zoom():
+func reset_zoom() -> void:
 	target_zoom = Vector2.ONE
 
-func reset_camera():
+func reset_camera() -> void:
 	target_position = Vector2.ZERO
 	target_zoom = Vector2.ONE

@@ -152,7 +152,7 @@ func _set_tile_action(clicked_cell: Vector2i) -> void:
 # --- CLERIC ------------------------------------------------------------------
 
 func _cancel_action() -> void:
-	PlayerActions.current_action = null
+	PlayerActions.current_action = ""
 	if bcl != null and not bcl.is_queued_for_deletion():
 		bcl.queue_free()
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -161,7 +161,7 @@ func _place_cleric() -> void:
 	if Store._buy_cleric():
 		var cl = cleric.instantiate()
 		cl.position = get_local_mouse_position()
-		PlayerActions.current_action = null
+		PlayerActions.current_action = ""
 		add_child(cl)
 	if bcl != null and not bcl.is_queued_for_deletion():
 		bcl.queue_free()
@@ -174,7 +174,7 @@ func _place_worker() -> void:
 			cl.position = get_local_mouse_position()
 			if bcl != null:
 				bcl.queue_free()
-			PlayerActions.current_action = null
+			PlayerActions.current_action = ""
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			add_child(cl)
 
