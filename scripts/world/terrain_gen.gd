@@ -79,6 +79,12 @@ func _make_request(work_type: String, clicked_cell: Vector2i, marker: Sprite2D, 
 	req.position = marker.position
 	req.effort = 100
 	req.on_complete = on_complete
+	
+	# Store command data for serialization
+	req.command_data = {
+		"marker_path": marker.get_path()
+	}
+	
 	return req
 
 func _make_icon(scene: PackedScene, pos) -> Sprite2D:

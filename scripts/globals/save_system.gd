@@ -118,7 +118,8 @@ func _collect_game_state() -> Dictionary:
 		"foxes": [],
 		"plants": [],
 		"player_actions": {},
-		"resources": {}
+		"resources": {},
+		"work_queue": {}
 	}
 	
 	# Find all entities in the scene tree
@@ -284,6 +285,10 @@ func _collect_global_data(game_state: Dictionary) -> void:
 	# Collect Resources data
 	if Resources != null and Resources.has_method("serialize"):
 		game_state.resources = Resources.serialize()
+	
+	# Collect WorkQueue data
+	if WorkQueue != null and WorkQueue.has_method("serialize"):
+		game_state.work_queue = WorkQueue.serialize()
 
 # Helper function to update plant sprite during loading
 func _update_plant_sprite_for_load(plant: Plant) -> void:
@@ -318,10 +323,101 @@ func _clear_plants() -> void:
 
 # Restore global state data from save data
 func _restore_global_data(save_data: Dictionary) -> void:
+	print("Restoring global data...")
+	
 	# Restore PlayerActions data
 	if save_data.has("player_actions") and PlayerActions != null and PlayerActions.has_method("deserialize"):
+		print("Restoring PlayerActions")
 		PlayerActions.deserialize(save_data.player_actions)
 	
 	# Restore Resources data
 	if save_data.has("resources") and Resources != null and Resources.has_method("deserialize"):
+		print("Restoring Resources")
 		Resources.deserialize(save_data.resources)
+	
+	# Restore WorkQueue data (must be done after scene setup)
+	if save_data.has("work_queue") and WorkQueue != null and WorkQueue.has_method("deserialize"):
+		print("Restoring WorkQueue with ", save_data.work_queue.get("work_requests", []).size(), " requests")
+		_restore_work_queue_with_markers(save_data.work_queue)
+	else:
+		print("WorkQueue restoration skipped - data available: ", save_data.has("work_queue"), " WorkQueue exists: ", WorkQueue != null)
+
+# Special restoration for work queue that recreates markers
+func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
+	# Clear existing work requests
+	WorkQueue._clear_all_work()
+	
+	# Get the terrain generator for marker creation
+	var tree = get_tree()
+	var main_node = tree.current_scene  # This is the Main node
+	print("Main node: ", main_node)
+	
+	# Get the main scene manager to access current_scene
+	var main_script = main_node
+	if not main_script.has_method("load_scene"):
+		push_error("Main node does not have expected scene management methods")
+		return
+	
+	# Access the current game scene through the main script's current_scene variable
+	var terrain_gen = null
+	if "current_scene" in main_script:
+		var game_scene = main_script.current_scene
+		print("Game scene: ", game_scene)
+		if game_scene != null and game_scene.has_method("map_to_local"):
+			terrain_gen = game_scene
+		else:
+			# Try to find TileMapLayer child
+			terrain_gen = game_scene.get_node("TileMapLayer") if game_scene != null else null
+	
+	if terrain_gen == null or not terrain_gen.has_method("map_to_local"):
+		push_error("Could not find terrain generator for work queue restoration")
+		return
+	
+	print("Found terrain_gen: ", terrain_gen)
+	
+	# Load preloaded scenes for markers
+	var dig_icon_scene = preload("res://preloads/dig_icon.tscn")
+	var plant_icon_scene = preload("res://preloads/plant_icon.tscn")
+	
+	# Restore work requests
+	if work_queue_data.has("work_requests"):
+		for request_data in work_queue_data.work_requests:
+			var request = WorkRequest.new()
+			
+			# Deserialize basic data first
+			if request_data.has("type"):
+				request.type = request_data.type
+			if request_data.has("cell"):
+				request.cell = Vector2i(request_data.cell.x, request_data.cell.y)
+			if request_data.has("position"):
+				request.position = Vector2(request_data.position.x, request_data.position.y)
+			if request_data.has("status"):
+				# Reset all work to "pending" status since worker assignments are lost during load
+				request.status = "pending"
+				print("Reset work request status from '", request_data.status, "' to 'pending' for cell ", request.cell)
+			if request_data.has("effort"):
+				request.effort = request_data.effort
+			if request_data.has("command_data"):
+				request.command_data = request_data.command_data
+			
+			# Recreate marker for dig/plant work types
+			if request.type in ["dig", "plant"]:
+				var marker_scene = dig_icon_scene if request.type == "dig" else plant_icon_scene
+				var marker = marker_scene.instantiate()
+				terrain_gen.add_child(marker)
+				
+				# Use the same positioning logic as new work creation
+				marker.position = terrain_gen.map_to_local(request.cell)
+				
+				# Update the request position to match the marker (in case of any rounding differences)
+				request.position = marker.position
+				
+				# Update command data with new marker path
+				request.command_data["marker_path"] = marker.get_path()
+			
+			# Reconstruct the callback
+			request._reconstruct_callback()
+			
+			# Add to work queue using the same method as new work creation
+			print("Adding restored work request: type=", request.type, " cell=", request.cell, " position=", request.position, " status=", request.status, " effort=", request.effort)
+			WorkQueue._add_work(request)

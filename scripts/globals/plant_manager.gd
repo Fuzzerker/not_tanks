@@ -69,6 +69,12 @@ func _gro_all() -> void:
 			req.cell = plant.cell
 			req.position = plant.position
 			req.effort = 100
+			
+			# Store command data for serialization
+			req.command_data = {
+				"plant_id": plant.get_instance_id()
+			}
+			
 			req.on_complete = func():
 				print("harvested")
 				Resources.food += 1
@@ -97,6 +103,12 @@ func _gro_all() -> void:
 			req.cell = plant.cell
 			req.position = plant.position
 			req.effort = 600
+			
+			# Store command data for serialization
+			req.command_data = {
+				"plant_id": plant.get_instance_id()
+			}
+			
 			req.on_complete = func():
 				if plant != null:
 					plant.agua = 6
