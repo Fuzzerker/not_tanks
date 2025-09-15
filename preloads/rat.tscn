@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://btfvbo6sesb20"]
+
+[ext_resource type="Texture2D" uid="uid://c4imwyjgg6g2b" path="res://sprites/animals.png" id="1_1f008"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xup1t"]
+atlas = ExtResource("1_1f008")
+region = Rect2(255.384, 203.648, 32, 32)
+
+[node name="Rat" type="Sprite2D"]
+texture = SubResource("AtlasTexture_xup1t")

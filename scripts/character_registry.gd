@@ -12,10 +12,10 @@ func _get_closest_cleric(pos: Vector2):
 	
 	for char in characters:
 		if char.type == "cleric":
-			var dist = pos.distance_squared_to(char.ref.position)
+			var dist = pos.distance_squared_to(char.position)
 			if dist < closest_dist:
 				closest_dist = dist
 				closest_cleric = char
 	if closest_cleric != null:
-		return closest_cleric.ref.position
+		return closest_cleric.position
 	

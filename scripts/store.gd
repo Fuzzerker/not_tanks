@@ -3,7 +3,14 @@ extends Node
 var cleric_cost_mod = 2
 var current_cleric_cost = 5
 
+var current_num_worker = 1
 
+func _buy_worker() -> bool:
+	if Resources.food < current_num_worker + 1:
+		return false
+	Resources.food -= current_num_worker
+	current_num_worker+=1
+	return true
 
 
 func  _buy_cleric() -> bool:

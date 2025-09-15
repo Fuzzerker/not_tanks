@@ -1,13 +1,15 @@
 extends "res://scripts/mover.gd"
 
-const MAX_OFFSET := 50
+var MAX_OFFSET = 50
 
 var pause_time: float = 0.0
-var is_idle = true
+var is_idle: bool = true
+var idle_origin: Vector2
 
 func _ready():
+	super._ready()
 	speed = 20
-	_pick_new_idle_target()
+	_start_idle()
 	
 
 func _process(delta: float):
@@ -30,4 +32,9 @@ func _pick_new_idle_target():
 	if log:
 		print("_pick_new_idle_target")
 	var offset = Vector2(randf_range(-MAX_OFFSET, MAX_OFFSET), randf_range(-MAX_OFFSET, MAX_OFFSET))
-	target_position = position + offset
+	target_position = idle_origin + offset
+
+func _start_idle():
+	is_idle = true
+	idle_origin = position
+	_pick_new_idle_target()

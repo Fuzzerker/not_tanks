@@ -19,7 +19,14 @@ config/icon="res://icon.svg"
 
 Resources="*res://scripts/resources.gd"
 PlayerActions="*res://scripts/player_actions.gd"
-WorkQueue="*res://preloads/work_queue.gd"
-Store="*res://store.gd"
-CharacterRegistry="*res://character_registry.gd"
-PlantManager="*res://plant_manager.gd"
+WorkQueue="*res://scripts/work_queue.gd"
+Store="*res://scripts/store.gd"
+CharacterRegistry="*res://scripts/character_registry.gd"
+PlantManager="*res://scripts/plant_manager.gd"
+InformationRegistry="*res://information_registry.gd"
+NameGenerator="*res://name_generator.gd"
+AnimalManager="*res://scripts/animal_manager.gd"
+
+[display]
+
+window/stretch/mode="canvas_items"
