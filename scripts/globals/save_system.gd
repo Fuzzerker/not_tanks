@@ -113,6 +113,8 @@ func _collect_game_state() -> Dictionary:
 		"version": "1.0",
 		"timestamp": Time.get_unix_time_from_system(),
 		"workers": [],
+		"farmers": [],
+		"cutters": [],
 		"clerics": [],
 		"rats": [],
 		"foxes": [],
@@ -147,6 +149,10 @@ func _collect_entities_recursive(node: Node, game_state: Dictionary):
 		match entity_data.get("entity_type", ""):
 			"worker":
 				game_state.workers.append(entity_data)
+			"farmer":
+				game_state.farmers.append(entity_data)
+			"cutter":
+				game_state.cutters.append(entity_data)
 			"cleric":
 				game_state.clerics.append(entity_data)
 			"rat":
@@ -170,6 +176,8 @@ func _restore_game_state(save_data: Dictionary):
 	
 	# Load entity preloads
 	var worker_scene = preload("res://preloads/worker.tscn")
+	var farmer_scene = preload("res://preloads/farmer.tscn")
+	var cutter_scene = preload("res://preloads/cutter.tscn")
 	var cleric_scene = preload("res://preloads/cleric.tscn")
 	var rat_scene = preload("res://preloads/rat.tscn")
 	var fox_scene = preload("res://preloads/fox.tscn")
@@ -187,6 +195,24 @@ func _restore_game_state(save_data: Dictionary):
 			worker.deserialize(worker_data)  # Then deserialize (this will call _ready)
 		else:
 			push_error("Worker entity missing deserialize method")
+	
+	# Restore farmers
+	for farmer_data in save_data.get("farmers", []):
+		var farmer = farmer_scene.instantiate()
+		game_node.add_child(farmer)  # Add to scene first
+		if farmer.has_method("deserialize"):
+			farmer.deserialize(farmer_data)  # Then deserialize (this will call _ready)
+		else:
+			push_error("Farmer entity missing deserialize method")
+	
+	# Restore cutters
+	for cutter_data in save_data.get("cutters", []):
+		var cutter = cutter_scene.instantiate()
+		game_node.add_child(cutter)  # Add to scene first
+		if cutter.has_method("deserialize"):
+			cutter.deserialize(cutter_data)  # Then deserialize (this will call _ready)
+		else:
+			push_error("Cutter entity missing deserialize method")
 	
 	# Restore clerics
 	for cleric_data in save_data.get("clerics", []):
@@ -469,9 +495,16 @@ func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
 			if request_data.has("command_data"):
 				request.command_data = request_data.command_data
 			
-			# Recreate marker for dig/plant work types
-			if request.type in ["dig", "crop"]:
-				var marker_scene = dig_icon_scene if request.type == "dig" else plant_icon_scene
+			# Recreate marker for dig/plant/chop work types
+			if request.type in ["dig", "crop", "chop"]:
+				var marker_scene
+				match request.type:
+					"dig":
+						marker_scene = dig_icon_scene
+					"crop":
+						marker_scene = plant_icon_scene
+					"chop":
+						marker_scene = preload("res://preloads/chop_icon.tscn")
 				var marker = marker_scene.instantiate()
 				terrain_gen.add_child(marker)
 				

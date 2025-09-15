@@ -1,8 +1,5 @@
-extends "res://scripts/entities/base/idler.gd"
+extends "res://scripts/entities/base/living_entity.gd"
 
-const EntityTypes = preload("res://scripts/globals/entity_types.gd")
-
-var entity_type: EntityTypes.EntityType
 var character_name: String = ""
 
 func _process(delta: float) -> void:

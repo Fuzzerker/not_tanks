@@ -1,6 +1,4 @@
 extends Node
-
-# Import classes
 const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
 

@@ -16,6 +16,8 @@ static func create_callback(type: String, cell: Vector2i, command_data: Dictiona
 			return _create_harvest_callback(command_data)
 		"agua":
 			return _create_agua_callback(command_data)
+		"chop":
+			return _create_chop_callback(command_data)
 		_:
 			push_warning("Unknown work type: " + type)
 			return Callable()
@@ -81,6 +83,55 @@ static func _create_agua_callback(command_data: Dictionary) -> Callable:
 			for plant in PlantManager._plants:
 				if plant.get_instance_id() == command_data.plant_id:
 					plant.agua = 6
+					break
+
+# Create chop callback from command data
+static func _create_chop_callback(command_data: Dictionary) -> Callable:
+	return func():
+		if command_data.has("arbol_id"):
+			# Find and damage the arbol
+			for plant in PlantManager._plants:
+				if plant.get_instance_id() == command_data.arbol_id:
+					plant.health -= 25  # Each chop does 25 damage
+					
+					# Update arbol scale to show shrinking
+					if plant.has_method("update_scale"):
+						plant.update_scale()
+					
+					if plant.health <= 0:
+						# Tree is fully chopped - give logs and remove tree
+						Resources.logs += plant.total_gro
+						
+						# Clean up this job's marker
+						if command_data.has("marker_path"):
+							var marker = _get_terrain_gen().get_node_or_null(command_data.marker_path)
+							if marker:
+								marker.queue_free()
+						
+						# Clean up any remaining chop jobs for this arbol
+						WorkQueue._destroy_chop_work_for_arbol(plant.get_instance_id())
+						
+						# Remove the arbol
+						PlantManager._plants.erase(plant)
+						if plant.marker:
+							plant.marker.queue_free()
+						plant.queue_free()
+					else:
+						# Tree still has health - the current job is complete, but we keep the marker
+						# and create another chop request using the same marker
+						var req := WorkRequest.new()
+						req.type = "chop"
+						req.cell = plant.cell
+						req.position = plant.position
+						req.effort = 100
+						
+						req.command_data = {
+							"marker_path": command_data.marker_path,
+							"arbol_id": plant.get_instance_id()
+						}
+						
+						req.on_complete = _create_chop_callback(req.command_data)
+						WorkQueue._add_work(req)
 					break
 
 # Helper to get terrain generator - shared logic between both systems

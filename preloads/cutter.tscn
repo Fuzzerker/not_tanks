@@ -1,0 +1,12 @@
+[gd_scene load_steps=4 format=3 uid="uid://lxqhi45rfuu2"]
+
+[ext_resource type="Texture2D" uid="uid://dr6d8rol8x6m8" path="res://sprites/rogues.png" id="1_26yh5"]
+[ext_resource type="Script" path="res://scripts/entities/characters/cutter.gd" id="2_8vnpx"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bejvd"]
+atlas = ExtResource("1_26yh5")
+region = Rect2(0.211, 64.078, 32, 32)
+
+[node name="Cutter" type="Sprite2D"]
+texture = SubResource("AtlasTexture_bejvd")
+script = ExtResource("2_8vnpx")

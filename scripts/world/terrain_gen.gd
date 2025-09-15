@@ -2,6 +2,7 @@ extends TileMapLayer
 
 # Import required classes
 const ArbolClass = preload("res://scripts/resources/tree.gd")
+var EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
 var terrain_source = 0
 var rogue_source = 0
@@ -15,12 +16,19 @@ var cleric = preload("res://preloads/cleric.tscn")
 var build_worker = preload("res://preloads/build_worker.tscn")
 var worker = preload("res://preloads/worker.tscn")
 
+var build_farmer = preload("res://preloads/build_farmer.tscn")
+var farmer = preload("res://preloads/farmer.tscn")
+
+var build_cutter = preload("res://preloads/build_cutter.tscn")
+var cutter = preload("res://preloads/cutter.tscn")
+
 var rat = preload("res://preloads/rat.tscn")
 var fox = preload("res://preloads/fox.tscn")
 
 var dig_icon = preload("res://preloads/dig_icon.tscn")
 var plant_icon = preload("res://preloads/plant_icon.tscn")
 var tree_icon = preload("res://preloads/tree_icon.tscn")
+var chop_icon = preload("res://preloads/chop_icon.tscn")
 
 var bcl: Sprite2D = null
 var gameplay_menu: Control = null
@@ -68,6 +76,10 @@ func _on_dig_pressed() -> void:
 func _on_plant_pressed() -> void: 
 	_cancel_action()
 	PlayerActions.current_action = "crop"
+	
+func _on_chop_pressed() -> void:
+	_cancel_action()
+	PlayerActions.current_action = "chop"
 	
 func _on_tree_pressed() -> void:
 	_cancel_action()
@@ -148,16 +160,113 @@ func _create_work_icon(cell_pos) -> Sprite2D:
 		"crop":
 			if Resources.seeds > 0:
 				return _make_icon(plant_icon, cell_pos)
+		"chop":
+			return _make_icon(chop_icon, cell_pos)
 	return null
 
 func _set_tile_action(clicked_cell: Vector2i) -> void:
+	# Set tile action in a 3x3 radius around the clicked cell
+	for x in range(-1, 2):  # -1, 0, 1
+		for y in range(-1, 2):  # -1, 0, 1
+			var target_cell = clicked_cell + Vector2i(x, y)
+			
+			# Skip if this cell already has work
+			if WorkQueue._has_work(target_cell):
+				continue
+			
+			# Create marker and work request for this cell
+			var marker = _create_work_icon(target_cell)
+			if marker:
+				_create_work_request(target_cell, marker)
+
+func _set_chop_action(clicked_cell: Vector2i) -> void:
+	# Find arbol at this position first
+	var arbol = _find_arbol_at_position(map_to_local(clicked_cell))
+	if arbol == null:
+		return  # No arbol to chop
+	
+	# Check if there's already a chop job for this specific arbol
+	if WorkQueue._has_chop_work_for_arbol(arbol.get_instance_id()):
+		return  # This arbol already has a chop job
+	
+	# Check if there's already work at this specific cell (for other job types)
 	if WorkQueue._has_work(clicked_cell):
 		return
-	#var mouse_pos = get_local_mouse_position()
-	#var cell_pos = local_to_map(mouse_pos)
-	var marker = _create_work_icon(clicked_cell)
+	
+	# Create chop icon on top of the arbol
+	var marker = _make_icon(chop_icon, clicked_cell)
 	if marker:
-		_create_work_request(clicked_cell, marker)
+		# Make sure the chop icon appears on top of the arbol
+		marker.z_index = 1
+		_create_chop_work_request(clicked_cell, marker, arbol)
+
+func _find_arbol_at_position(world_pos: Vector2) -> Plant:
+	# Use PlantManager to find arbol at this position
+	var closest_plant = PlantManager._get_closest_plant(world_pos)
+	if closest_plant and closest_plant.entity_type == EntityTypes.EntityType.ARBOL:
+		# Check if it's close enough (within same cell)
+		var distance = world_pos.distance_to(closest_plant.position)
+		if distance < 32:  # Within one tile
+			return closest_plant
+	return null
+
+func _create_chop_work_request(clicked_cell: Vector2i, marker: Sprite2D, arbol: Plant) -> void:
+	var req := WorkRequest.new()
+	req.type = "chop"
+	req.cell = clicked_cell
+	req.position = marker.position
+	req.effort = 100
+	
+	# Store command data for serialization
+	req.command_data = {
+		"marker_path": marker.get_path(),
+		"arbol_id": arbol.get_instance_id()
+	}
+	
+	# Create callback that damages the arbol and eventually harvests it
+	req.on_complete = _build_chop_on_completed(arbol, marker)
+	
+	WorkQueue._add_work(req)
+
+func _build_chop_on_completed(arbol: Plant, marker: Sprite2D) -> Callable:
+	return func():
+		# Damage the arbol
+		arbol.health -= 25  # Each chop does 25 damage
+		
+		# Update arbol scale to show shrinking
+		if arbol.has_method("update_scale"):
+			arbol.update_scale()
+		
+		if arbol.health <= 0:
+			# Tree is fully chopped - give logs and remove tree
+			Resources.logs += arbol.total_gro
+			
+			# Clean up the chop marker
+			marker.queue_free()
+			
+			# Clean up any remaining chop jobs for this arbol
+			WorkQueue._destroy_chop_work_for_arbol(arbol.get_instance_id())
+			
+			# Remove the arbol
+			PlantManager._plants.erase(arbol)
+			if arbol.marker:
+				arbol.marker.queue_free()
+			arbol.queue_free()
+		else:
+			# Tree still has health - create another chop request
+			var new_req := WorkRequest.new()
+			new_req.type = "chop"
+			new_req.cell = arbol.cell
+			new_req.position = marker.position
+			new_req.effort = 100
+			
+			new_req.command_data = {
+				"marker_path": marker.get_path(),
+				"arbol_id": arbol.get_instance_id()
+			}
+			
+			new_req.on_complete = _build_chop_on_completed(arbol, marker)
+			WorkQueue._add_work(new_req)
 
 
 # --- CLERIC ------------------------------------------------------------------
@@ -179,9 +288,31 @@ func _place_cleric() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 func _place_worker() -> void:
-	for i in range(0,1):
+	for i in range(0,150):
 		if Store._buy_worker():
 			var cl = worker.instantiate()
+			cl.position = get_local_mouse_position()
+			if bcl != null:
+				bcl.queue_free()
+			PlayerActions.current_action = ""
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+			add_child(cl)
+
+func _place_farmer() -> void:
+	for i in range(0,1):
+		if Store._buy_farmer():
+			var cl = farmer.instantiate()
+			cl.position = get_local_mouse_position()
+			if bcl != null:
+				bcl.queue_free()
+			PlayerActions.current_action = ""
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+			add_child(cl)
+
+func _place_cutter() -> void:
+	for i in range(0,1):
+		if Store._buy_cutter():
+			var cl = cutter.instantiate()
 			cl.position = get_local_mouse_position()
 			if bcl != null:
 				bcl.queue_free()
@@ -242,12 +373,18 @@ func _tilemap_click() -> void:
 	match PlayerActions.current_action:
 		"dig", "crop":
 			_set_tile_action(clicked_cell)
+		"chop":
+			_set_chop_action(clicked_cell)
 		"arbol":
 			_place_arbol()
 		"place_cleric":
 			_place_cleric()
 		"place_worker":
 			_place_worker()
+		"place_farmer":
+			_place_farmer()
+		"place_cutter":
+			_place_cutter()
 		"place_rat":
 			_place_rat()
 		"place_fox":
@@ -330,6 +467,18 @@ func _on_build_worker_pressed() -> void:
 	bcl = build_worker.instantiate()
 	get_parent().add_child(bcl)
 	PlayerActions.current_action = "place_worker"
+
+func _on_build_farmer_pressed() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	bcl = build_farmer.instantiate()
+	get_parent().add_child(bcl)
+	PlayerActions.current_action = "place_farmer"
+
+func _on_build_cutter_pressed() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	bcl = build_cutter.instantiate()
+	get_parent().add_child(bcl)
+	PlayerActions.current_action = "place_cutter"
 
 func _on_spawn_rat_pressed() -> void:
 	_cancel_action()

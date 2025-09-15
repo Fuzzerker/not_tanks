@@ -4,6 +4,7 @@ extends Node
 var agua: int = 0
 var seeds: int = 5
 var food: int = 0
+var logs: int = 0
 
 # Serialize resources data for saving
 func serialize() -> Dictionary:
@@ -11,7 +12,8 @@ func serialize() -> Dictionary:
 		"type": "resources",
 		"agua": agua,
 		"seeds": seeds,
-		"food": food
+		"food": food,
+		"logs": logs
 	}
 
 # Deserialize resources data when loading
@@ -22,3 +24,5 @@ func deserialize(data: Dictionary) -> void:
 		seeds = data.seeds
 	if data.has("food"):
 		food = data.food
+	if data.has("logs"):
+		logs = data.logs

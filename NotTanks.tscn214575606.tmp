@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://by3dirgdn0xiw"]
+[gd_scene load_steps=21 format=3 uid="uid://by3dirgdn0xiw"]
 
 [ext_resource type="Texture2D" uid="uid://csryrkfj4lfga" path="res://sprites/maptiles.png" id="1_v4jwb"]
 [ext_resource type="Script" uid="uid://c6mx4agli1n6c" path="res://scripts/ui/camera_control.gd" id="2_45neo"]
@@ -9,7 +9,6 @@
 [ext_resource type="Script" uid="uid://c2fafyvfge7ag" path="res://scripts/ui/agua_value.gd" id="5_n603m"]
 [ext_resource type="Script" uid="uid://ctohpiorbe3xm" path="res://scripts/ui/seeds.gd" id="6_q56mv"]
 [ext_resource type="Script" uid="uid://dde046qn2et2j" path="res://scripts/ui/food_label.gd" id="7_kr0b5"]
-[ext_resource type="Script" uid="uid://cik54u1cji536" path="res://scripts/ui/logs_label.gd" id="8_logs"]
 [ext_resource type="Script" uid="uid://cxi6b84q1us22" path="res://scripts/ui/info_pane.gd" id="9_3fx1h"]
 [ext_resource type="PackedScene" uid="uid://c40ljumm3qmum" path="res://gameplay_menu.tscn" id="13_gameplay"]
 
@@ -1134,27 +1133,6 @@ theme_override_constants/margin_right = 8
 layout_mode = 2
 text = "0"
 script = ExtResource("7_kr0b5")
-
-[node name="Logs" type="HBoxContainer" parent="CanvasLayer/Panel2/VBoxContainer"]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/Panel2/VBoxContainer/Logs"]
-layout_mode = 2
-theme_override_constants/margin_left = 9
-theme_override_constants/margin_right = 25
-
-[node name="Label" type="Label" parent="CanvasLayer/Panel2/VBoxContainer/Logs/MarginContainer"]
-layout_mode = 2
-text = "Logs: "
-
-[node name="MarginContainer2" type="MarginContainer" parent="CanvasLayer/Panel2/VBoxContainer/Logs"]
-layout_mode = 2
-theme_override_constants/margin_right = 8
-
-[node name="Label" type="Label" parent="CanvasLayer/Panel2/VBoxContainer/Logs/MarginContainer2"]
-layout_mode = 2
-text = "0"
-script = ExtResource("8_logs")
 
 [node name="PanelContainer" type="PanelContainer" parent="CanvasLayer"]
 anchors_preset = 5

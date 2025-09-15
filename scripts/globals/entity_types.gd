@@ -6,6 +6,8 @@ enum EntityType {
 	ARBOL,
 	CLERIC,
 	WORKER,
+	FARMER,
+	CUTTER,
 	RAT,
 	FOX
 }
@@ -21,6 +23,10 @@ static func type_to_string(entity_type: EntityType) -> String:
 			return "cleric"
 		EntityType.WORKER:
 			return "worker"
+		EntityType.FARMER:
+			return "farmer"
+		EntityType.CUTTER:
+			return "cutter"
 		EntityType.RAT:
 			return "rat"
 		EntityType.FOX:
@@ -29,8 +35,8 @@ static func type_to_string(entity_type: EntityType) -> String:
 			return "unknown"
 
 # Convert string to enum for deserialization
-static func string_to_type(type_string: String) -> EntityType:
-	match type_string:
+static func string_to_type(type_str: String) -> EntityType:
+	match type_str:
 		"crop":
 			return EntityType.CROP
 		"arbol":
@@ -39,6 +45,10 @@ static func string_to_type(type_string: String) -> EntityType:
 			return EntityType.CLERIC
 		"worker":
 			return EntityType.WORKER
+		"farmer":
+			return EntityType.FARMER
+		"cutter":
+			return EntityType.CUTTER
 		"rat":
 			return EntityType.RAT
 		"fox":
@@ -46,5 +56,5 @@ static func string_to_type(type_string: String) -> EntityType:
 		"plant":  # Legacy compatibility
 			return EntityType.CROP
 		_:
-			push_error("Unknown entity type: " + type_string)
+			push_error("Unknown entity type: " + type_str)
 			return EntityType.CROP  # Default fallback
