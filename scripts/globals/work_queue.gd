@@ -29,10 +29,8 @@ func _destroy_work(pos: Vector2) -> void:
 func _add_work(request: WorkRequest) -> void:
 	for rq: WorkRequest in work_requests:
 		if rq.cell == request.cell:
-			print("Work request rejected - duplicate at cell ", request.cell)
 			return
 	work_requests.push_back(request)
-	print("Work request added: type=", request.type, " cell=", request.cell, " total_requests=", work_requests.size())
 
 func _claim_work(position: Vector2) -> WorkRequest:
 	var closest_request: WorkRequest = null
@@ -64,7 +62,6 @@ func serialize() -> Dictionary:
 
 # Deserialize work queue data when loading
 func deserialize(data: Dictionary) -> void:
-	print("WorkQueue deserialize called with ", data.get("work_requests", []).size(), " requests")
 	# Clear existing work requests
 	work_requests.clear()
 	
@@ -75,7 +72,6 @@ func deserialize(data: Dictionary) -> void:
 			request.deserialize(request_data)
 			work_requests.append(request)
 	
-	print("WorkQueue now has ", work_requests.size(), " requests")
 
 # Helper method for save system to clear all work requests
 func _clear_all_work() -> void:

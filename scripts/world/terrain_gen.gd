@@ -1,5 +1,7 @@
 extends TileMapLayer
 
+# Import required classes
+const ArbolClass = preload("res://scripts/resources/tree.gd")
 
 var terrain_source = 0
 var rogue_source = 0
@@ -13,8 +15,12 @@ var cleric = preload("res://preloads/cleric.tscn")
 var build_worker = preload("res://preloads/build_worker.tscn")
 var worker = preload("res://preloads/worker.tscn")
 
+var rat = preload("res://preloads/rat.tscn")
+var fox = preload("res://preloads/fox.tscn")
+
 var dig_icon = preload("res://preloads/dig_icon.tscn")
 var plant_icon = preload("res://preloads/plant_icon.tscn")
+var tree_icon = preload("res://preloads/tree_icon.tscn")
 
 var bcl: Sprite2D = null
 var gameplay_menu: Control = null
@@ -25,11 +31,12 @@ var is_paused: bool = false
 
 func _ready() -> void:
 	Resources.food = 100000
-	_build_plants()	
 	_set_terrain()
 	
-	# Get reference to the gameplay menu
+	# Get reference to the gameplay menu and connect its load signal
 	gameplay_menu = get_node("../CanvasLayer/GameplayMenu")
+	if gameplay_menu:
+		gameplay_menu.load_game.connect(_on_load_game_from_menu)
 
 # Load a game save directly without UI dependencies
 func load_game_save(save_name: String) -> bool:
@@ -37,7 +44,6 @@ func load_game_save(save_name: String) -> bool:
 		push_error("Save name cannot be empty")
 		return false
 	
-	print("Loading game save: ", save_name)
 	# Load save data and restore to current scene (which should be the game scene)
 	var save_data = SaveSystem.load_save_data(save_name)
 	if save_data.is_empty():
@@ -46,21 +52,26 @@ func load_game_save(save_name: String) -> bool:
 	
 	return SaveSystem.restore_game_state(save_data)
 
+# Handle load game signal from gameplay menu - delegate to main scene manager
+func _on_load_game_from_menu(save_name: String) -> void:
+	# Get the main scene manager and tell it to load the game
+	var main_scene: Node = get_tree().current_scene
+	if main_scene and main_scene.has_method("_on_load_game"):
+		main_scene._on_load_game(save_name)
+	else:
+		push_error("Could not find main scene manager to handle load game request")
 
-func _build_plants():
-	PlayerActions.current_action = "plant"
-	_build_plant_on_completed(Vector2i(0,0), _create_work_icon(Vector2i(0,0))).call()
-	_build_plant_on_completed(Vector2i(1,0), _create_work_icon(Vector2i(1,0))).call()
-	_build_plant_on_completed(Vector2i(0,1), _create_work_icon(Vector2i(0,1))).call()
-	_build_plant_on_completed(Vector2i(-1,0), _create_work_icon(Vector2i(-1,0))).call()
-	_build_plant_on_completed(Vector2i(0,-1), _create_work_icon(Vector2i(0,-1))).call()
 
 func _on_dig_pressed() -> void: 
 	_cancel_action()
 	PlayerActions.current_action = "dig" 
 func _on_plant_pressed() -> void: 
 	_cancel_action()
-	PlayerActions.current_action = "plant"
+	PlayerActions.current_action = "crop"
+	
+func _on_tree_pressed() -> void:
+	_cancel_action()
+	PlayerActions.current_action = "arbol"
 
 var game_size = 50
 
@@ -114,8 +125,8 @@ func _build_plant_on_completed(clicked_cell: Vector2i, marker: Sprite2D) -> Call
 		plant.marker = marker
 		plant.cell = clicked_cell
 		plant.position = marker.position
-		plant.agua = 100
 		PlantManager._register(plant)
+
 
 
 # --- TILE ACTIONS -------------------------------------_-----------------------
@@ -124,17 +135,17 @@ func _create_work_request(clicked_cell: Vector2i, marker: Sprite2D) -> void:
 	match PlayerActions.current_action:
 		"dig":
 			WorkQueue._add_work(_make_request("dig", clicked_cell, marker, _build_dig_on_completed(clicked_cell, marker)))
-		"plant":
+		"crop":
 			if Resources.seeds <= 0:
 				return
 			Resources.seeds -= 1
-			WorkQueue._add_work(_make_request("plant", clicked_cell, marker, _build_plant_on_completed(clicked_cell, marker)))
+			WorkQueue._add_work(_make_request("crop", clicked_cell, marker, _build_plant_on_completed(clicked_cell, marker)))
 
 func _create_work_icon(cell_pos) -> Sprite2D:
 	match PlayerActions.current_action:
 		"dig":
 			return _make_icon(dig_icon, cell_pos)
-		"plant":
+		"crop":
 			if Resources.seeds > 0:
 				return _make_icon(plant_icon, cell_pos)
 	return null
@@ -168,7 +179,7 @@ func _place_cleric() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 func _place_worker() -> void:
-	for i in range(0,100):
+	for i in range(0,1):
 		if Store._buy_worker():
 			var cl = worker.instantiate()
 			cl.position = get_local_mouse_position()
@@ -178,6 +189,50 @@ func _place_worker() -> void:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			add_child(cl)
 
+func _place_rat() -> void:
+	var rat_instance = rat.instantiate()
+	rat_instance.position = get_local_mouse_position()
+	PlayerActions.current_action = ""
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	add_child(rat_instance)
+
+func _place_fox() -> void:
+	var fox_instance = fox.instantiate()
+	fox_instance.position = get_local_mouse_position()
+	PlayerActions.current_action = ""
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	add_child(fox_instance)
+
+func _place_arbol() -> void:
+	# Create arbol icon/marker at the clicked position
+	var clicked_cell = local_to_map(get_local_mouse_position())
+	var marker_instance = tree_icon.instantiate()
+	marker_instance.position = map_to_local(clicked_cell)
+	add_child(marker_instance)
+	
+	# Change marker texture to use misc_tiles.png at atlas coords 1,1
+	var new_atlas := AtlasTexture.new()
+	new_atlas.atlas = preload("res://sprites/misc_tiles.png")
+	var atlas_loc = Vector2(3, 24)
+	var rect_size = Vector2(1,2)
+	
+	new_atlas.region = Rect2(atlas_loc * 32, rect_size * 32)
+	marker_instance.texture = new_atlas
+	
+	# Create and register the arbol immediately
+	var arbol := ArbolClass.new()
+	arbol.marker = marker_instance
+	arbol.cell = clicked_cell
+	arbol.position = marker_instance.position
+	
+	# Set initial scale and position properly
+	arbol.update_scale()
+	
+	PlantManager._register(arbol)
+	
+	# Clear the action
+	PlayerActions.current_action = ""
+
 # --- INPUT HANDLING ----------------------------------------------------------
 
 var clicked = false
@@ -185,12 +240,18 @@ var clicked = false
 func _tilemap_click() -> void:
 	var clicked_cell = local_to_map(get_local_mouse_position())
 	match PlayerActions.current_action:
-		"dig", "plant":
+		"dig", "crop":
 			_set_tile_action(clicked_cell)
+		"arbol":
+			_place_arbol()
 		"place_cleric":
 			_place_cleric()
 		"place_worker":
 			_place_worker()
+		"place_rat":
+			_place_rat()
+		"place_fox":
+			_place_fox()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.keycode == KEY_SPACE:
@@ -270,6 +331,14 @@ func _on_build_worker_pressed() -> void:
 	get_parent().add_child(bcl)
 	PlayerActions.current_action = "place_worker"
 
+func _on_spawn_rat_pressed() -> void:
+	_cancel_action()
+	PlayerActions.current_action = "place_rat"
+
+func _on_spawn_fox_pressed() -> void:
+	_cancel_action()
+	PlayerActions.current_action = "place_fox"
+
 # --- PAUSE MENU FUNCTIONALITY ------------------------------------------------
 
 func _toggle_pause_menu() -> void:
@@ -300,3 +369,62 @@ func _on_resume_game() -> void:
 
 func _on_quit_game() -> void:
 	get_tree().quit()
+
+# --- TILE DATA SERIALIZATION -------------------------------------------------
+
+# Serialize tile data for saving
+func serialize_tiles() -> Dictionary:
+	var tile_data: Dictionary = {}
+	
+	# Get the used rect to only save tiles that have been set
+	var used_rect: Rect2i = get_used_rect()
+	
+	# Only save if there are tiles to save
+	if used_rect.size.x > 0 and used_rect.size.y > 0:
+		for x in range(used_rect.position.x, used_rect.position.x + used_rect.size.x):
+			for y in range(used_rect.position.y, used_rect.position.y + used_rect.size.y):
+				var cell_pos: Vector2i = Vector2i(x, y)
+				var source_id: int = get_cell_source_id(cell_pos)
+				var atlas_coords: Vector2i = get_cell_atlas_coords(cell_pos)
+				
+				# Only save non-default tiles or if they have been explicitly set
+				if source_id != -1:
+					var cell_key: String = str(x) + "," + str(y)
+					tile_data[cell_key] = {
+						"source_id": source_id,
+						"atlas_coords": {"x": atlas_coords.x, "y": atlas_coords.y}
+					}
+	
+	return {
+		"type": "terrain",
+		"game_size": game_size,
+		"tiles": tile_data
+	}
+
+# Deserialize and restore tile data
+func deserialize_tiles(data: Dictionary) -> void:
+	if not data.has("tiles"):
+		return
+	
+	
+	# Clear existing tiles first
+	clear()
+	
+	# Restore game size if saved
+	if data.has("game_size"):
+		game_size = data.game_size
+	
+	# Restore each saved tile
+	for cell_key: String in data.tiles:
+		var coords: PackedStringArray = cell_key.split(",")
+		if coords.size() == 2:
+			var x: int = coords[0].to_int()
+			var y: int = coords[1].to_int()
+			var cell_pos: Vector2i = Vector2i(x, y)
+			
+			var tile_info: Dictionary = data.tiles[cell_key]
+			var source_id: int = tile_info.source_id
+			var atlas_coords: Vector2i = Vector2i(tile_info.atlas_coords.x, tile_info.atlas_coords.y)
+			
+			set_cell(cell_pos, source_id, atlas_coords)
+	

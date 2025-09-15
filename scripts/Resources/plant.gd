@@ -2,6 +2,8 @@ extends Node
 
 class_name Plant
 
+const EntityTypes = preload("res://scripts/globals/entity_types.gd")
+
 @export var marker: Sprite2D
 @export var cell: Vector2i
 @export var position: Vector2
@@ -9,7 +11,7 @@ class_name Plant
 var health: int = 1
 var max_health: int = 100
 var agua: int = 0
-var type: String = "plant"
+var entity_type: EntityTypes.EntityType = EntityTypes.EntityType.CROP
 var max_total_gro: int = 100
 var total_gro: int = 1
 func _get_info() -> Dictionary:
@@ -19,12 +21,13 @@ func _get_info() -> Dictionary:
 		"agua": agua,
 		"cell":cell,
 		"position":position,
+		"entity_type": EntityTypes.type_to_string(entity_type)
 	}
 
 # Serialize plant data for saving
 func serialize() -> Dictionary:
 	return {
-		"type": type,
+		"entity_type": EntityTypes.type_to_string(entity_type),
 		"health": health,
 		"max_health": max_health,
 		"agua": agua,
@@ -50,3 +53,7 @@ func deserialize(data: Dictionary) -> void:
 		cell = Vector2i(data.cell.x, data.cell.y)
 	if data.has("position"):
 		position = Vector2(data.position.x, data.position.y)
+	if data.has("entity_type"):
+		entity_type = EntityTypes.string_to_type(data.entity_type)
+	elif data.has("type"):  # Legacy compatibility
+		entity_type = EntityTypes.string_to_type(data.type)

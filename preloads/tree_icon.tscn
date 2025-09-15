@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://tree_icon_scene"]
+
+[ext_resource type="Texture2D" uid="uid://misc_tiles" path="res://sprites/misc_tiles.png" id="1_misc"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tree"]
+atlas = ExtResource("1_misc")
+region = Rect2(16, 16, 16, 16)
+
+[node name="TreeIcon" type="Sprite2D"]
+texture = SubResource("AtlasTexture_tree")
+scale = Vector2(0.5, 0.5)

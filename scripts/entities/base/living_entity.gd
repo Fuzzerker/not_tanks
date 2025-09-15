@@ -2,13 +2,15 @@ extends "res://scripts/entities/base/idler.gd"
 
 # Base class for all living entities with health and hunger systems
 
+const EntityTypes = preload("res://scripts/globals/entity_types.gd")
+
 # Health and hunger system
 var max_health: int = 100
 var health: int = 100
 var hunger: int = 100
 var hungry_interval: float = 1.0
 var hunger_threshold: int = 50  # When to start looking for food
-var type: String = "living_entity"
+var entity_type: EntityTypes.EntityType
 # Internal timer for hunger decay
 var _time_accumulator: float = 0.0
 
@@ -45,7 +47,6 @@ func _process_live(delta: float, is_idle: bool) -> bool:
 
 # Virtual method to be overridden by subclasses
 func _handle_hunger(_delta: float) -> void:
-	print("hungry, passing to subclass")
 	pass
 
 # Virtual method to be overridden by subclasses  
@@ -81,7 +82,7 @@ func serialize() -> Dictionary:
 	data["hunger"] = hunger
 	data["hungry_interval"] = hungry_interval
 	data["hunger_threshold"] = hunger_threshold
-	data["type"] = type
+	data["entity_type"] = EntityTypes.type_to_string(entity_type)
 	data["_time_accumulator"] = _time_accumulator
 	return data
 
@@ -97,7 +98,9 @@ func deserialize(data: Dictionary) -> void:
 		hungry_interval = data.hungry_interval
 	if data.has("hunger_threshold"):
 		hunger_threshold = data.hunger_threshold
-	if data.has("type"):
-		type = data.type
+	if data.has("entity_type"):
+		entity_type = EntityTypes.string_to_type(data.entity_type)
+	elif data.has("type"):  # Legacy compatibility
+		entity_type = EntityTypes.string_to_type(data.type)
 	if data.has("_time_accumulator"):
 		_time_accumulator = data._time_accumulator

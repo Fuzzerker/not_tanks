@@ -22,9 +22,8 @@ func _on_quit_button_pressed() -> void:
 # Called when Load Selected button is pressed
 func _on_load_selected_pressed() -> void:
 	
-	var selected_items: Array[int] = saves_list.get_selected_items()
+	var selected_items: PackedInt32Array = saves_list.get_selected_items()
 	if selected_items.is_empty():
-		_show_message("Please select a save to load!")
 		return
 	
 	var save_name: String = saves_list.get_item_text(selected_items[0])
@@ -54,7 +53,3 @@ func _refresh_saves_list() -> void:
 	else:
 		for save_name: String in saves:
 			saves_list.add_item(save_name)
-
-# Show a message to the user
-func _show_message(message: String) -> void:
-	print("Main Menu Message: ", message)

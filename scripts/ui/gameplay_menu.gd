@@ -2,6 +2,7 @@ extends Control
 
 signal resume_game
 signal quit_game
+signal load_game(save_name: String)
 
 @onready var save_name_input: LineEdit = $Panel/VBoxContainer/SaveLoadContainer/SaveNameContainer/SaveNameInput
 @onready var saves_list: ItemList = $Panel/VBoxContainer/SaveLoadContainer/SavesList
@@ -25,28 +26,20 @@ func _on_quit_pressed() -> void:
 func _on_save_pressed() -> void:
 	var save_name: String = save_name_input.text.strip_edges()
 	if save_name.is_empty():
-		_show_message("Please enter a save name!")
 		return
 	
 	if SaveSystem.save_game(save_name):
-		_show_message("Game saved successfully!")
 		_refresh_saves_list()
 		save_name_input.clear()
-	else:
-		_show_message("Failed to save game!")
 
 func _on_load_pressed() -> void:
-	var selected_items: Array[int] = saves_list.get_selected_items()
+	var selected_items: PackedInt32Array = saves_list.get_selected_items()
 	if selected_items.is_empty():
-		_show_message("Please select a save to load!")
 		return
 	
 	var save_name: String = saves_list.get_item_text(selected_items[0])
-	if SaveSystem.load_game(save_name):
-		_show_message("Game loaded successfully!")
-		resume_game.emit()  # Resume after loading
-	else:
-		_show_message("Failed to load game!")
+	hide_menu()
+	load_game.emit(save_name)  # Signal the main scene manager to handle the load
 
 func _on_save_selected(index: int) -> void:
 	var save_name: String = saves_list.get_item_text(index)
@@ -54,13 +47,10 @@ func _on_save_selected(index: int) -> void:
 
 func _refresh_saves_list() -> void:
 	saves_list.clear()
-	var saves: Array[String] = SaveSystem.get_save_list()
+	var saves: Array = SaveSystem.get_save_list()
 	for save_name: String in saves:
 		saves_list.add_item(save_name)
 
-func _show_message(message: String) -> void:
-	# For now, just print to console. In a real game, you might show a popup
-	print("Save/Load Message: ", message)
 
 func show_menu() -> void:
 	visible = true

@@ -1,5 +1,7 @@
 extends Node
 
+const EntityTypes = preload("res://scripts/globals/entity_types.gd")
+
 var animals: Array = []
 
 func _register(animal) -> void:
@@ -12,10 +14,8 @@ func _get_closest_rat(pos: Vector2):
 	for animal in animals:
 		if animal == null:
 			continue
-		if animal.get("type") != "rat":
-			print("animal ", animal, " not rat, its ", animal.get("type"))
+		if animal.get("entity_type") != EntityTypes.EntityType.RAT:
 			continue
-		print("animal is rat")
 		var dist: float = pos.distance_squared_to(animal.position)
 		if dist < closest_dist:
 			closest_dist = dist

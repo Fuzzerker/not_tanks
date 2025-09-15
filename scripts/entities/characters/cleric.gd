@@ -1,6 +1,8 @@
 extends "res://scripts/entities/base/idler.gd"
 
-var type: String = "cleric"
+const EntityTypes = preload("res://scripts/globals/entity_types.gd")
+
+var entity_type: EntityTypes.EntityType
 var character_name: String = ""
 
 func _process(delta: float) -> void:
@@ -10,6 +12,7 @@ func _process(delta: float) -> void:
 
 func _ready() -> void:
 	character_name = NameGenerator._generate_name()
+	entity_type = EntityTypes.EntityType.CLERIC
 	super._ready()
 	
 	InformationRegistry._register(self)
@@ -19,7 +22,7 @@ func _ready() -> void:
 func _get_info() -> Dictionary:
 	var inf: Dictionary = super()
 	inf["character_name"] = character_name
-	inf["type"] = type
+	inf["entity_type"] = entity_type
 	return inf
 
 # Serialization methods

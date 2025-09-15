@@ -1,5 +1,6 @@
 extends Node
 
+const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
 var characters: Array = []
 
@@ -11,7 +12,7 @@ func _get_closest_cleric(pos: Vector2) -> Vector2:
 	var closest_dist: float = INF
 	
 	for char in characters:
-		if char.type == "cleric":
+		if char.entity_type == EntityTypes.EntityType.CLERIC:
 			var dist: float = pos.distance_squared_to(char.position)
 			if dist < closest_dist:
 				closest_dist = dist

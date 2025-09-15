@@ -33,21 +33,17 @@ func _on_new_game() -> void:
 	load_scene(GAME_SCENE_PATH)
 
 func _on_load_game(save_name: String) -> void:
-	print("_on_load_game called with save_name: ", save_name)
 	# Load the game scene first
 	var ne_scene: Node = load_scene(GAME_SCENE_PATH)
 	
 	if not ne_scene.is_node_ready():
 		await ne_scene.ready
-	print("Scene ready, loading save: ", save_name)
 	
 	# Get the terrain generator and load the save directly
 	var terrain_gen: Node = current_scene.get_node("TileMapLayer")
 	if terrain_gen and terrain_gen.has_method("load_game_save"):
 		var success: bool = terrain_gen.load_game_save(save_name)
-		if success:
-			print("Game loaded successfully!")
-		else:
+		if not success:
 			push_error("Failed to load game save: " + save_name)
 	else:
 		push_error("Could not find terrain generator in NotTanks scene")

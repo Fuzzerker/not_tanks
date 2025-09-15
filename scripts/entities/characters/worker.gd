@@ -2,6 +2,7 @@ extends "res://scripts/entities/base/living_entity.gd"
 
 # Worker - Human character with work system, stamina, and unique eating mechanics
 
+
 enum Action { IDLE, WORK, REST, EATING }
 
 var action: Action = Action.IDLE
@@ -24,7 +25,7 @@ func _ready() -> void:
 	max_health = 150  # Workers have moderate health
 	health = 150
 	hunger_threshold = 30  # Workers eat when less than 30% hungry (more patient)
-	type = "worker"
+	entity_type = EntityTypes.EntityType.WORKER
 	CharacterRegistry._add_character(self)
 
 func _get_info() -> Dictionary:
@@ -63,7 +64,6 @@ func _handle_hunger(delta: float) -> void:
 		
 		# Found food source, stop current action and go eat
 		target_position = current_food_source.position
-		print("Found food source, going to eat")
 		action = Action.EATING
 	
 	# Move toward food source
@@ -95,7 +95,6 @@ func _eat_from_source() -> void:
 		if hunger > 100:
 			hunger = 100
 		
-		print("Worker ate food. Hunger: ", hunger, " Food remaining: ", Resources.food)
 	
 	current_food_source = null
 	if active_work != null:
@@ -146,11 +145,8 @@ func _do_work() -> void:
 func _find_work() -> void:
 	active_work = WorkQueue._claim_work(position)
 	if active_work:
-		if log:
-			print("Found work:", active_work.type)
 		action = Action.WORK
 		target_position = active_work.position
-		print("setting target positiong to active ork position in _find_ork")
 
 # --- helpers ---
 func _switch_to_idle() -> void:

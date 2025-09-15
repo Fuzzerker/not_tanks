@@ -12,8 +12,6 @@ func _ready() -> void:
 	
 
 func _process(delta: float) -> void:
-	if log:
-		print("idle_process")
 	if pause_time > 0:
 		pause_time -= delta
 		return
@@ -25,8 +23,6 @@ func _process(delta: float) -> void:
 		_move_toward(delta)
 
 func _pick_new_idle_target() -> void:
-	if log:
-		print("_pick_new_idle_target")
 	var idle_offset: Vector2 = Vector2(randf_range(-MAX_OFFSET, MAX_OFFSET), randf_range(-MAX_OFFSET, MAX_OFFSET))
 	target_position = idle_origin + idle_offset
 

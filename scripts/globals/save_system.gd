@@ -2,6 +2,10 @@ extends Node
 
 # SaveSystem - Handles saving and loading game state to/from JSON files
 
+# Import required classes
+const ArbolClass = preload("res://scripts/resources/tree.gd")
+const WorkCallbackFactory = preload("res://scripts/globals/work_callback_factory.gd")
+
 const SAVE_DIR = "user://saves/"
 const SAVE_EXTENSION = ".json"
 
@@ -29,7 +33,6 @@ func save_game(save_name: String) -> bool:
 	file.store_string(json_string)
 	file.close()
 	
-	print("Game saved successfully to: ", file_path)
 	return true
 
 # Load game state from a named file (for in-game loading)
@@ -39,7 +42,6 @@ func load_game(save_name: String) -> bool:
 		return false
 	
 	_restore_game_state(save_data)
-	print("Game loaded successfully from in-game")
 	return true
 
 # Load save data from file without restoring to scene (for main menu loading)
@@ -65,7 +67,6 @@ func load_save_data(save_name: String) -> Dictionary:
 		push_error("Failed to parse save file JSON")
 		return {}
 	
-	print("Save data loaded from: ", file_path)
 	return json.data
 
 # Restore game state from save data (call this when game scene is active)
@@ -75,7 +76,6 @@ func restore_game_state(save_data: Dictionary) -> bool:
 		return false
 	
 	_restore_game_state(save_data)
-	print("Game state restored to current scene")
 	return true
 
 # Get list of available save files
@@ -119,7 +119,8 @@ func _collect_game_state() -> Dictionary:
 		"plants": [],
 		"player_actions": {},
 		"resources": {},
-		"work_queue": {}
+		"work_queue": {},
+		"terrain": {}
 	}
 	
 	# Find all entities in the scene tree
@@ -132,6 +133,9 @@ func _collect_game_state() -> Dictionary:
 	# Collect global state data
 	_collect_global_data(game_state)
 	
+	# Collect terrain data
+	_collect_terrain_data(game_state)
+	
 	return game_state
 
 # Recursively collect entities from scene tree
@@ -140,7 +144,7 @@ func _collect_entities_recursive(node: Node, game_state: Dictionary):
 	if node.has_method("serialize"):
 		var entity_data = node.serialize()
 		
-		match entity_data.get("type", ""):
+		match entity_data.get("entity_type", ""):
 			"worker":
 				game_state.workers.append(entity_data)
 			"cleric":
@@ -149,7 +153,7 @@ func _collect_entities_recursive(node: Node, game_state: Dictionary):
 				game_state.rats.append(entity_data)
 			"fox":
 				game_state.foxes.append(entity_data)
-			"plant":
+			"crop", "arbol":
 				game_state.plants.append(entity_data)
 	
 	# Recursively check children
@@ -170,6 +174,7 @@ func _restore_game_state(save_data: Dictionary):
 	var rat_scene = preload("res://preloads/rat.tscn")
 	var fox_scene = preload("res://preloads/fox.tscn")
 	var plant_icon_scene = preload("res://preloads/plant_icon.tscn")
+	var tree_icon_scene = preload("res://preloads/tree_icon.tscn")
 	
 	# Get the main game node (where entities should be spawned)
 	var game_node = get_tree().current_scene
@@ -212,17 +217,42 @@ func _restore_game_state(save_data: Dictionary):
 	
 	# Restore plants
 	for plant_data in save_data.get("plants", []):
-		# Create the plant marker sprite
-		var plant_marker = plant_icon_scene.instantiate()
-		game_node.add_child(plant_marker)
+		# Determine plant type and create appropriate object
+		var plant_type: String = plant_data.get("entity_type", "crop")  # Default to crop for legacy saves
+		var plant = null
 		
-		# Set marker position
-		if plant_data.has("position"):
-			plant_marker.position = Vector2(plant_data.position.x, plant_data.position.y)
-		
-		# Create the plant object
-		var plant = Plant.new()
-		plant.marker = plant_marker
+		if plant_type == "arbol":
+			# Create arbol with proper sprite
+			var arbol_marker = tree_icon_scene.instantiate()
+			game_node.add_child(arbol_marker)
+			
+			# Set marker position
+			if plant_data.has("position"):
+				arbol_marker.position = Vector2(plant_data.position.x, plant_data.position.y)
+			
+			# Set arbol texture to use same sprite as when created
+			var new_atlas := AtlasTexture.new()
+			new_atlas.atlas = preload("res://sprites/misc_tiles.png")
+			var atlas_loc = Vector2(3, 24)
+			var rect_size = Vector2(1,2)
+			new_atlas.region = Rect2(atlas_loc * 32, rect_size * 32)
+			arbol_marker.texture = new_atlas
+			
+			# Create arbol instance
+			plant = ArbolClass.new()
+			plant.marker = arbol_marker
+		else:
+			# Create crop with seedling sprite
+			var plant_marker = plant_icon_scene.instantiate()
+			game_node.add_child(plant_marker)
+			
+			# Set marker position
+			if plant_data.has("position"):
+				plant_marker.position = Vector2(plant_data.position.x, plant_data.position.y)
+			
+			# Create crop instance
+			plant = Plant.new()
+			plant.marker = plant_marker
 		
 		# Deserialize plant data
 		if plant.has_method("deserialize"):
@@ -230,11 +260,17 @@ func _restore_game_state(save_data: Dictionary):
 		else:
 			push_error("Plant entity missing deserialize method")
 		
-		# Update the sprite to match plant's health level
-		_update_plant_sprite_for_load(plant)
+		# Update the sprite to match plant's health level and type
+		if plant_type == "arbol" and plant.has_method("update_scale"):
+			plant.update_scale()  # Use scaling for arbols
+		else:
+			_update_plant_sprite_for_load(plant)  # Use sprite changes for crops
 		
 		# Register the plant with the PlantManager
 		PlantManager._register(plant)
+	
+	# Restore terrain data
+	_restore_terrain_data(save_data)
 	
 	# Restore global state data
 	_restore_global_data(save_data)
@@ -251,9 +287,9 @@ func _clear_entities_recursive(node: Node):
 	# Check if this node is an entity we want to clear
 	if node.has_method("serialize"):
 		var entity_data = node.serialize()
-		var entity_type = entity_data.get("type", "")
+		var entity_type = entity_data.get("entity_type", "")
 		
-		if entity_type in ["worker", "cleric", "rat", "fox", "plant"]:
+		if entity_type in ["worker", "cleric", "rat", "fox", "crop", "arbol"]:
 			node.queue_free()
 			return  # Don't process children of deleted nodes
 	
@@ -290,6 +326,48 @@ func _collect_global_data(game_state: Dictionary) -> void:
 	if WorkQueue != null and WorkQueue.has_method("serialize"):
 		game_state.work_queue = WorkQueue.serialize()
 
+# Collect terrain data from the TileMapLayer
+func _collect_terrain_data(game_state: Dictionary) -> void:
+	
+	# Find the terrain generator (TileMapLayer) in the scene
+	var terrain_gen: TileMapLayer = _find_terrain_generator()
+	if terrain_gen != null and terrain_gen.has_method("serialize_tiles"):
+		game_state.terrain = terrain_gen.serialize_tiles()
+
+
+# Helper function to find the terrain generator in the scene
+func _find_terrain_generator() -> TileMapLayer:
+	var root: Node = get_tree().current_scene
+	if root != null:
+		# Look for the Main scene first
+		if root.has_method("load_scene"):  # This is the Main scene
+			# Access the current game scene through main's current_scene
+			if "current_scene" in root and root.current_scene != null:
+				var game_scene: Node = root.current_scene
+				# Try to find TileMapLayer in the game scene
+				var terrain_gen: Node = game_scene.get_node_or_null("TileMapLayer")
+				if terrain_gen is TileMapLayer:
+					return terrain_gen
+		else:
+			# We're directly in the game scene, look for TileMapLayer
+			var terrain_gen: Node = root.get_node_or_null("TileMapLayer")
+			if terrain_gen is TileMapLayer:
+				return terrain_gen
+	
+	return null
+
+# Restore terrain data from save data
+func _restore_terrain_data(save_data: Dictionary) -> void:
+	if not save_data.has("terrain"):
+		return
+	
+	
+	# Find the terrain generator
+	var terrain_gen: TileMapLayer = _find_terrain_generator()
+	if terrain_gen != null and terrain_gen.has_method("deserialize_tiles"):
+		terrain_gen.deserialize_tiles(save_data.terrain)
+
+
 # Helper function to update plant sprite during loading
 func _update_plant_sprite_for_load(plant: Plant) -> void:
 	var mrkr = plant.marker
@@ -299,7 +377,7 @@ func _update_plant_sprite_for_load(plant: Plant) -> void:
 	new_atlas.atlas = preload("res://sprites/Seedling.png")
 	
 	# Calculate health level and sprite region
-	var health_level = int(plant.health / 25) + 1  # Every 25 health units = 1 sprite level
+	var health_level = int(plant.health / 25.0) + 1  # Every 25 health units = 1 sprite level
 	var atlas_y_offset = health_level * 16  # 16 pixels per level
 	
 	# Set the appropriate region based on health
@@ -323,24 +401,19 @@ func _clear_plants() -> void:
 
 # Restore global state data from save data
 func _restore_global_data(save_data: Dictionary) -> void:
-	print("Restoring global data...")
 	
 	# Restore PlayerActions data
 	if save_data.has("player_actions") and PlayerActions != null and PlayerActions.has_method("deserialize"):
-		print("Restoring PlayerActions")
 		PlayerActions.deserialize(save_data.player_actions)
 	
 	# Restore Resources data
 	if save_data.has("resources") and Resources != null and Resources.has_method("deserialize"):
-		print("Restoring Resources")
 		Resources.deserialize(save_data.resources)
 	
 	# Restore WorkQueue data (must be done after scene setup)
 	if save_data.has("work_queue") and WorkQueue != null and WorkQueue.has_method("deserialize"):
-		print("Restoring WorkQueue with ", save_data.work_queue.get("work_requests", []).size(), " requests")
 		_restore_work_queue_with_markers(save_data.work_queue)
-	else:
-		print("WorkQueue restoration skipped - data available: ", save_data.has("work_queue"), " WorkQueue exists: ", WorkQueue != null)
+
 
 # Special restoration for work queue that recreates markers
 func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
@@ -350,7 +423,6 @@ func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
 	# Get the terrain generator for marker creation
 	var tree = get_tree()
 	var main_node = tree.current_scene  # This is the Main node
-	print("Main node: ", main_node)
 	
 	# Get the main scene manager to access current_scene
 	var main_script = main_node
@@ -362,7 +434,6 @@ func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
 	var terrain_gen = null
 	if "current_scene" in main_script:
 		var game_scene = main_script.current_scene
-		print("Game scene: ", game_scene)
 		if game_scene != null and game_scene.has_method("map_to_local"):
 			terrain_gen = game_scene
 		else:
@@ -373,7 +444,6 @@ func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
 		push_error("Could not find terrain generator for work queue restoration")
 		return
 	
-	print("Found terrain_gen: ", terrain_gen)
 	
 	# Load preloaded scenes for markers
 	var dig_icon_scene = preload("res://preloads/dig_icon.tscn")
@@ -394,14 +464,13 @@ func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
 			if request_data.has("status"):
 				# Reset all work to "pending" status since worker assignments are lost during load
 				request.status = "pending"
-				print("Reset work request status from '", request_data.status, "' to 'pending' for cell ", request.cell)
 			if request_data.has("effort"):
 				request.effort = request_data.effort
 			if request_data.has("command_data"):
 				request.command_data = request_data.command_data
 			
 			# Recreate marker for dig/plant work types
-			if request.type in ["dig", "plant"]:
+			if request.type in ["dig", "crop"]:
 				var marker_scene = dig_icon_scene if request.type == "dig" else plant_icon_scene
 				var marker = marker_scene.instantiate()
 				terrain_gen.add_child(marker)
@@ -415,9 +484,8 @@ func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
 				# Update command data with new marker path
 				request.command_data["marker_path"] = marker.get_path()
 			
-			# Reconstruct the callback
-			request._reconstruct_callback()
+			# Reconstruct the callback using the shared factory
+			request.on_complete = WorkCallbackFactory.create_callback(request.type, request.cell, request.command_data)
 			
 			# Add to work queue using the same method as new work creation
-			print("Adding restored work request: type=", request.type, " cell=", request.cell, " position=", request.position, " status=", request.status, " effort=", request.effort)
 			WorkQueue._add_work(request)

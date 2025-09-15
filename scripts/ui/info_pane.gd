@@ -1,5 +1,7 @@
 extends PanelContainer
 
+const EntityTypes = preload("res://scripts/globals/entity_types.gd")
+
 
 @export var orker_deets:Label
 @export var cleric_deets:Label
@@ -24,11 +26,10 @@ func _get_one_at_position():
 
 		if _unsafe(infoable):
 			continue
-		var infoable_type = infoable.get("type")
+		var infoable_type = infoable.get("entity_type")
 		
 		var sprite_to_use: Sprite2D = null
-		
-		if infoable_type == "plant":
+		if infoable_type == EntityTypes.EntityType.CROP or infoable_type == EntityTypes.EntityType.ARBOL:
 			# Additional safety check for marker access
 			if infoable.has_method("get") and infoable.get("marker") != null and is_instance_valid(infoable.marker):
 				sprite_to_use = infoable.marker
@@ -43,12 +44,12 @@ func _get_one_at_position():
 		var has_point: bool = global_rect.has_point(game_tilemap.get_global_mouse_position())
 		
 		
-		var txt_str: String = str(infoable.get("type")," \ntm_global_mouse_pos: ", Vector2i(game_tilemap.get_global_mouse_position()), " \nglobal_rect: ", Rect2i(global_rect), "\nhas_point: ",has_point)
-		if infoable_type == "plant":
+		var txt_str: String = str(EntityTypes.type_to_string(infoable_type)," \ntm_global_mouse_pos: ", Vector2i(game_tilemap.get_global_mouse_position()), " \nglobal_rect: ", Rect2i(global_rect), "\nhas_point: ",has_point)
+		if infoable_type == EntityTypes.EntityType.CROP or infoable_type == EntityTypes.EntityType.ARBOL:
 			orker_deets.text =txt_str
-		if infoable_type == "cleric":
+		if infoable_type == EntityTypes.EntityType.CLERIC:
 			cleric_deets.text =txt_str
-		if infoable_type == "rat":
+		if infoable_type == EntityTypes.EntityType.RAT:
 			rat_deets.text =txt_str
 		
 		if  has_point:

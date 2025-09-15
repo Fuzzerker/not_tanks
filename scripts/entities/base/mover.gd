@@ -44,8 +44,6 @@ func _move_toward(delta: float) -> void:
 func _has_arrived(threshold: float) -> bool:
 	threshold *= Engine.time_scale
 	var has_arrived: bool = position.distance_squared_to(target_position) < threshold * threshold
-	if log:
-		print("has_arrived = ", has_arrived, " @", position, " vs ", target_position)
 	return has_arrived
 
 # Serialization methods
