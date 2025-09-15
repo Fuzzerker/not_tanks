@@ -1,0 +1,12 @@
+[gd_scene load_steps=4 format=3 uid="uid://w6o01lf4t3g7"]
+
+[ext_resource type="Texture2D" uid="uid://c4imwyjgg6g2b" path="res://sprites/animals.png" id="1_brkjc"]
+[ext_resource type="Script" uid="uid://dh6b8lbvpoi2d" path="res://scripts/entities/animals/fox.gd" id="2_0jdac"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xup1t"]
+atlas = ExtResource("1_brkjc")
+region = Rect2(97.384, 134.648, 32, 32)
+
+[node name="Fox" type="Sprite2D"]
+texture = SubResource("AtlasTexture_xup1t")
+script = ExtResource("2_0jdac")

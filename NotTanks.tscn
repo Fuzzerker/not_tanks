@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://by3dirgdn0xiw"]
+[gd_scene load_steps=18 format=3 uid="uid://by3dirgdn0xiw"]
 
 [ext_resource type="Texture2D" uid="uid://csryrkfj4lfga" path="res://sprites/maptiles.png" id="1_v4jwb"]
 [ext_resource type="Script" uid="uid://c6mx4agli1n6c" path="res://scripts/ui/camera_control.gd" id="2_45neo"]
@@ -8,10 +8,7 @@
 [ext_resource type="Script" uid="uid://c2fafyvfge7ag" path="res://scripts/ui/agua_value.gd" id="5_n603m"]
 [ext_resource type="Script" uid="uid://ctohpiorbe3xm" path="res://scripts/ui/seeds.gd" id="6_q56mv"]
 [ext_resource type="Script" uid="uid://dde046qn2et2j" path="res://scripts/ui/food_label.gd" id="7_kr0b5"]
-[ext_resource type="PackedScene" uid="uid://46gfvt0lk8vo" path="res://preloads/cleric.tscn" id="7_y7lrh"]
-[ext_resource type="Texture2D" uid="uid://c4imwyjgg6g2b" path="res://sprites/animals.png" id="8_7r86j"]
 [ext_resource type="Script" uid="uid://cxi6b84q1us22" path="res://scripts/ui/info_pane.gd" id="9_3fx1h"]
-[ext_resource type="Script" uid="uid://dh6b8lbvpoi2d" path="res://scripts/entities/animals/fox.gd" id="9_vtu0v"]
 [ext_resource type="PackedScene" uid="uid://btfvbo6sesb20" path="res://preloads/rat.tscn" id="11_qyiog"]
 [ext_resource type="Script" uid="uid://sgwdxphy0dp3" path="res://scripts/entities/animals/rat.gd" id="12_3fx1h"]
 
@@ -386,10 +383,6 @@ texture_region_size = Vector2i(32, 32)
 sources/0 = SubResource("TileSetAtlasSource_45neo")
 sources/1 = SubResource("TileSetAtlasSource_e378v")
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_xup1t"]
-atlas = ExtResource("8_7r86j")
-region = Rect2(97.384, 134.648, 32, 32)
-
 [sub_resource type="Theme" id="Theme_q56mv"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_kr0b5"]
@@ -410,14 +403,8 @@ mous_pos_label = NodePath("../CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2/
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("2_45neo")
 
-[node name="Cleric" parent="." instance=ExtResource("7_y7lrh")]
-
 [node name="Rat" parent="." instance=ExtResource("11_qyiog")]
 script = ExtResource("12_3fx1h")
-
-[node name="Fox" type="Sprite2D" parent="."]
-texture = SubResource("AtlasTexture_xup1t")
-script = ExtResource("9_vtu0v")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

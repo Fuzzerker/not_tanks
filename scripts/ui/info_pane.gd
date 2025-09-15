@@ -21,10 +21,10 @@ var time_accrual = 0.0
 
 func _get_one_at_position():
 	for infoable in InformationRegistry.infoables:
-		var infoable_type = infoable.get("type")
-		
+
 		if _unsafe(infoable):
 			continue
+		var infoable_type = infoable.get("type")
 		
 		var sprite_to_use: Sprite2D = null
 		

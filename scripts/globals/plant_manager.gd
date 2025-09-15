@@ -34,35 +34,36 @@ func _process(delta: float) -> void:
 		_gro_all()
 
 func _register(plant: Plant) -> void:
+
 	print("registering plant")
 	InformationRegistry._register(plant)
 	_plants.push_back(plant)
 	
+
+func _update_plant_sprite(plant: Plant) -> void:
+	var mrkr = plant.marker
+	var health_level = int(plant.health / 25) +1  # Every 25 health units = 1 sprite level
+	var atlas_y_offset = health_level * 16  # 16 pixels per level
 	
-func _drain_plant(plant:Plant) -> Plant:
-	if !_plants.has(plant):
-		return null
-	plant.current_gro -= 1
-	if plant.current_gro < 0:
-		plant.current_phase -= 1
-		if plant.current_phase < 0:
-			_plants.erase(plant)
-			plant.queue_free()
-			return null
-		
-		plant.current_gro = plant.gro_required -1
-		plant.current_phase -= 1
-		var mrkr = plant.marker
-		mrkr.texture.region = Rect2(
-			mrkr.texture.region.position + Vector2(0, -16),
-			mrkr.texture.region.size
-		)
-		
-	return plant
+	# Calculate the base position (assuming sprite starts at top of atlas)
+	var base_y = 0  # Adjust this based on your sprite atlas layout
+	mrkr.texture.region = Rect2(
+		Vector2(mrkr.texture.region.position.x, base_y + atlas_y_offset),
+		mrkr.texture.region.size
+	)
+
+func _consume_plant(plant):
+	if plant not in _plants:
+		return plant
+	if plant == null:
+		_plants.erase(plant)
+	plant.health -= 1
+	_update_plant_sprite(plant)
 
 func _gro_all() -> void:
 	for plant in _plants:
-		if plant.current_phase == plant.final_phase:
+		# Check if plant is ready for harvest (at full health)
+		if plant.health >= plant.max_health:
 			var req := WorkRequest.new()
 			req.type = "harvest"
 			req.cell = plant.cell
@@ -72,24 +73,25 @@ func _gro_all() -> void:
 				print("harvested")
 				Resources.food += 1
 				Resources.seeds += randi_range(1, 3)
-				
 				plant.marker.queue_free()
+				plant.queue_free()
 				_plants.erase(plant)
 			WorkQueue._add_work(req)
 			continue
 
-		if plant.aqua > 0:
-			plant.current_gro += 1
-			plant.aqua -= 1
-			if plant.current_gro >= plant.gro_required:
-				plant.current_gro = 0
-				plant.current_phase += 1
-				var mrkr = plant.marker
-				mrkr.texture.region = Rect2(
-					mrkr.texture.region.position + Vector2(0, 16),
-					mrkr.texture.region.size
-				)
+		# If plant has water, grow it
+		if plant.agua > 0:
+			plant.total_gro += 1
+			if plant.total_gro <= plant.max_total_gro:	
+				plant.health += 1
+				plant.agua -= 1
+				# Cap health at maximum
+				if plant.health > plant.max_health:
+					plant.health = plant.max_health
+				# Update sprite based on new health
+				_update_plant_sprite(plant)
 		else:
+			# Request water if plant has none
 			var req := WorkRequest.new()
 			req.type = "agua"
 			req.cell = plant.cell
@@ -97,5 +99,9 @@ func _gro_all() -> void:
 			req.effort = 600
 			req.on_complete = func():
 				if plant != null:
-					plant.aqua = 6
+					plant.agua = 6
 			WorkQueue._add_work(req)
+		if plant.health <= 0:
+			_plants.erase(plant)
+			plant.marker.queue_free()
+			plant.queue_free()

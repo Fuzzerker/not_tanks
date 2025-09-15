@@ -29,16 +29,11 @@ func _get_info() -> Dictionary:
 #returns false if this entity is busy doing something regarding its living function
 func _process_live(delta: float, is_idle: bool) -> bool:
 	pos_label.text = str(Vector2i(global_position))
-	
-	# Update hunger and health
 	_update_hunger_and_health(delta)
-	
 	
 	if hunger < hunger_threshold:
 		_handle_hunger(delta)
 		
-	
-	# Check for death
 	if health <= 0:
 		_die()
 		return false
@@ -50,6 +45,7 @@ func _process_live(delta: float, is_idle: bool) -> bool:
 
 # Virtual method to be overridden by subclasses
 func _handle_hunger(_delta: float) -> void:
+	print("hungry, passing to subclass")
 	pass
 
 # Virtual method to be overridden by subclasses  

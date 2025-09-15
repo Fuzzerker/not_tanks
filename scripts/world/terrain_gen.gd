@@ -22,9 +22,17 @@ var bcl: Sprite2D = null
 
 func _ready() -> void:
 	Resources.food = 100000
-	_place_worker()
-		
+	_build_plants()	
 	_set_terrain()
+
+
+func _build_plants():
+	PlayerActions.current_action = "plant"
+	_build_plant_on_completed(Vector2i(0,0), _create_work_icon(Vector2i(0,0))).call()
+	_build_plant_on_completed(Vector2i(1,0), _create_work_icon(Vector2i(1,0))).call()
+	_build_plant_on_completed(Vector2i(0,1), _create_work_icon(Vector2i(0,1))).call()
+	_build_plant_on_completed(Vector2i(-1,0), _create_work_icon(Vector2i(-1,0))).call()
+	_build_plant_on_completed(Vector2i(0,-1), _create_work_icon(Vector2i(0,-1))).call()
 
 func _on_dig_pressed() -> void: 
 	_cancel_action()
@@ -52,12 +60,10 @@ func _make_request(work_type: String, clicked_cell: Vector2i, marker: Sprite2D, 
 	req.on_complete = on_complete
 	return req
 
-func _make_icon(scene: PackedScene) -> Sprite2D:
+func _make_icon(scene: PackedScene, pos) -> Sprite2D:
 	var inst: Sprite2D = scene.instantiate()
 	add_child(inst)
-	var mouse_pos = get_local_mouse_position()
-	var cell_pos = local_to_map(mouse_pos)
-	inst.position = map_to_local(cell_pos)
+	inst.position = map_to_local(pos)
 	return inst
 
 
@@ -81,6 +87,7 @@ func _build_plant_on_completed(clicked_cell: Vector2i, marker: Sprite2D) -> Call
 		plant.marker = marker
 		plant.cell = clicked_cell
 		plant.position = marker.position
+		plant.agua = 100
 		PlantManager._register(plant)
 
 
@@ -96,19 +103,21 @@ func _create_work_request(clicked_cell: Vector2i, marker: Sprite2D) -> void:
 			Resources.seeds -= 1
 			WorkQueue._add_work(_make_request("plant", clicked_cell, marker, _build_plant_on_completed(clicked_cell, marker)))
 
-func _create_work_icon() -> Sprite2D:
+func _create_work_icon(cell_pos) -> Sprite2D:
 	match PlayerActions.current_action:
 		"dig":
-			return _make_icon(dig_icon)
+			return _make_icon(dig_icon, cell_pos)
 		"plant":
 			if Resources.seeds > 0:
-				return _make_icon(plant_icon)
+				return _make_icon(plant_icon, cell_pos)
 	return null
 
 func _set_tile_action(clicked_cell: Vector2i) -> void:
 	if WorkQueue._has_work(clicked_cell):
 		return
-	var marker = _create_work_icon()
+	#var mouse_pos = get_local_mouse_position()
+	#var cell_pos = local_to_map(mouse_pos)
+	var marker = _create_work_icon(clicked_cell)
 	if marker:
 		_create_work_request(clicked_cell, marker)
 
@@ -141,6 +150,8 @@ func _place_worker() -> void:
 			PlayerActions.current_action = null
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			add_child(cl)
+	if Resources.food > 100:
+		Resources.food = 1
 
 # --- INPUT HANDLING ----------------------------------------------------------
 
@@ -207,6 +218,7 @@ func _on_pause_pressed() -> void:
 # --- BUILD CLERIC BUTTON -----------------------------------------------------
 
 func _process(delta: float) -> void:
+
 	if bcl:
 		bcl.position = get_global_mouse_position()
 	mous_pos_label.text = str(get_global_mouse_position())

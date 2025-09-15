@@ -6,19 +6,17 @@ class_name Plant
 @export var cell: Vector2i
 @export var position: Vector2
 
-var current_phase: int = 0
-var final_phase: int = 4
-var current_gro: int = 0
-var gro_required: int = 10
-var aqua: int = 0
+var health = 1
+var max_health = 100
+var agua: int = 0
 var type = "plant"
-
+var max_total_gro = 100
+var total_gro = 1
 func _get_info():
 	
 	return {
-		"gro": str(current_gro) +"/"+str(gro_required),
-		"phase": str(current_phase) +"/"+str(final_phase),
-		"aqua": aqua,
+		"health": health,
+		"agua": agua,
 		"cell":cell,
 		"position":position,
 	}
