@@ -1,0 +1,61 @@
+[gd_scene load_steps=2 format=3 uid="uid://dgqjoj5pbluqu"]
+
+[ext_resource type="Script" uid="uid://buijksyr88c2n" path="res://scripts/ui/main_menu.gd" id="1_0x8ym"]
+
+[node name="Main Menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0x8ym")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="CenterContainer"]
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlayMargin" type="MarginContainer" parent="CenterContainer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+
+[node name="PlayButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/PlayMargin"]
+layout_mode = 2
+text = "Play"
+
+[node name="QuitMargin" type="MarginContainer" parent="CenterContainer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="QuitButton" type="Button" parent="CenterContainer/Panel/VBoxContainer/QuitMargin"]
+layout_mode = 2
+text = "Quit"
+
+[connection signal="pressed" from="CenterContainer/Panel/VBoxContainer/PlayMargin/PlayButton" to="." method="_on_play_button_pressed"]
+[connection signal="pressed" from="CenterContainer/Panel/VBoxContainer/QuitMargin/QuitButton" to="." method="_on_quit_button_pressed"]

@@ -17,6 +17,9 @@ var dig_icon = preload("res://preloads/dig_icon.tscn")
 var plant_icon = preload("res://preloads/plant_icon.tscn")
 
 var bcl: Sprite2D = null
+var gameplay_menu: Control = null
+var previous_time_scale: float = 1.0
+var is_paused: bool = false
 
 @export var mous_pos_label:Label = null
 
@@ -24,6 +27,9 @@ func _ready() -> void:
 	Resources.food = 100000
 	_build_plants()	
 	_set_terrain()
+	
+	# Get reference to the gameplay menu
+	gameplay_menu = get_node("../CanvasLayer/GameplayMenu")
 
 
 func _build_plants():
@@ -173,6 +179,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			Engine.time_scale = 0
 		else:
 			Engine.time_scale = 1
+	
+	# Handle escape key to toggle pause menu
+	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
+		_toggle_pause_menu()
+		return
+	
+	# Don't process other inputs if paused
+	if is_paused:
+		return
+		
 	if event is InputEventMouseMotion and clicked:
 		_tilemap_click()
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -217,7 +233,7 @@ func _on_pause_pressed() -> void:
 
 # --- BUILD CLERIC BUTTON -----------------------------------------------------
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 
 	if bcl:
 		bcl.position = get_global_mouse_position()
@@ -234,3 +250,34 @@ func _on_build_worker_pressed() -> void:
 	bcl = build_worker.instantiate()
 	get_parent().add_child(bcl)
 	PlayerActions.current_action = "place_worker"
+
+# --- PAUSE MENU FUNCTIONALITY ------------------------------------------------
+
+func _toggle_pause_menu() -> void:
+	if is_paused:
+		_resume_game()
+	else:
+		_pause_game()
+
+func _pause_game() -> void:
+	if not is_paused:
+		previous_time_scale = Engine.time_scale
+		Engine.time_scale = 0
+		is_paused = true
+		if gameplay_menu:
+			gameplay_menu.show_menu()
+
+func _resume_game() -> void:
+	if is_paused:
+		Engine.time_scale = previous_time_scale
+		is_paused = false
+		if gameplay_menu:
+			gameplay_menu.hide_menu()
+
+# --- GAMEPLAY MENU SIGNAL HANDLERS -------------------------------------------
+
+func _on_resume_game() -> void:
+	_resume_game()
+
+func _on_quit_game() -> void:
+	get_tree().quit()

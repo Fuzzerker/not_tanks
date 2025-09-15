@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://by3dirgdn0xiw"]
+[gd_scene load_steps=19 format=3 uid="uid://by3dirgdn0xiw"]
 
 [ext_resource type="Texture2D" uid="uid://csryrkfj4lfga" path="res://sprites/maptiles.png" id="1_v4jwb"]
 [ext_resource type="Script" uid="uid://c6mx4agli1n6c" path="res://scripts/ui/camera_control.gd" id="2_45neo"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://cxi6b84q1us22" path="res://scripts/ui/info_pane.gd" id="9_3fx1h"]
 [ext_resource type="PackedScene" uid="uid://btfvbo6sesb20" path="res://preloads/rat.tscn" id="11_qyiog"]
 [ext_resource type="Script" uid="uid://sgwdxphy0dp3" path="res://scripts/entities/animals/rat.gd" id="12_3fx1h"]
+[ext_resource type="PackedScene" uid="uid://c40ljumm3qmum" path="res://gameplay_menu.tscn" id="13_gameplay"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_45neo"]
 texture = ExtResource("1_v4jwb")
@@ -636,6 +637,8 @@ layout_mode = 2
 [node name="rat_deets" type="Label" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2/PanelContainer5"]
 layout_mode = 2
 
+[node name="GameplayMenu" parent="CanvasLayer" instance=ExtResource("13_gameplay")]
+
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/MarginContainer2/dig" to="TileMapLayer" method="_on_dig_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/MarginContainer3/Plant" to="TileMapLayer" method="_on_plant_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PanelContainer/BuildCleric" to="TileMapLayer" method="_on_build_cleric_pressed"]
@@ -643,3 +646,5 @@ layout_mode = 2
 [connection signal="pressed" from="CanvasLayer/PanelContainer/HBoxContainer/MarginContainer4/SPeed don" to="TileMapLayer" method="_on_speed_don_pressed"]
 [connection signal="pressed" from="CanvasLayer/PanelContainer/HBoxContainer/MarginContainer5/Pause" to="TileMapLayer" method="_on_pause_pressed"]
 [connection signal="pressed" from="CanvasLayer/PanelContainer/HBoxContainer/MarginContainer6/SPeed up" to="TileMapLayer" method="_on_speed_up_pressed"]
+[connection signal="quit_game" from="CanvasLayer/GameplayMenu" to="TileMapLayer" method="_on_quit_game"]
+[connection signal="resume_game" from="CanvasLayer/GameplayMenu" to="TileMapLayer" method="_on_resume_game"]
