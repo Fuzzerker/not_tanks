@@ -1,4 +1,4 @@
-extends "res://scripts/living_entity.gd"
+extends "res://scripts/entities/base/living_entity.gd"
 
 # Worker - Human character with work system, stamina, and unique eating mechanics
 
@@ -40,37 +40,31 @@ func _get_info() -> Dictionary:
 
 func _process(delta: float) -> void:
 	pos_label.text = str(Vector2i(global_position))
-	
-	# Handle different actions
-	match action:
-		Action.REST:
-			_process_rest(delta)
-		Action.WORK:
-			_process_work(delta)
-		Action.EATING:
-			_process_eating(delta)
-		Action.IDLE:
-			_process_idle(delta)
-	
-	# Update hunger and health (from parent class)
-	super._process(delta)
-
+	var free = super._process_live(delta, action == Action.IDLE)
+	if stamina <= 10:
+		_switch_to_rest(delta)
+		
+	if free:
+		match action:
+			Action.REST:
+				_process_rest(delta)
+			Action.WORK:
+				_process_work(delta)
+			Action.IDLE:
+				_process_idle(delta)
+				
 func _handle_hunger(delta: float) -> void:
 	# Workers have unique eating behavior - they eat from stores/food sources
 	if current_food_source == null:
 		current_food_source = _find_food_source()
 		
 		if current_food_source == null:
-			if not is_idle:
-				print("No food source found, going idle")
-				_start_idle()
 			return
 		
 		# Found food source, stop current action and go eat
 		target_position = current_food_source.position
 		print("Found food source, going to eat")
 		action = Action.EATING
-		is_idle = false
 	
 	# Move toward food source
 	if current_food_source != null:
@@ -104,57 +98,51 @@ func _eat_from_source() -> void:
 		print("Worker ate food. Hunger: ", hunger, " Food remaining: ", Resources.food)
 	
 	current_food_source = null
-	action = Action.IDLE
-	_start_idle()
+	if active_work != null:
+		action = Action.WORK
+	else:
+		action = Action.IDLE
+		_switch_to_idle()
 
 func _process_rest(delta: float) -> void:
 	if _has_arrived(rest_distance):
-		var cleric = CharacterRegistry._get_closest_cleric(position)
-		if cleric:
-			target_position = cleric
-			stamina += 10
-			if stamina >= max_stamina:
-				stamina = max_stamina
-				_switch_to_idle()
+		stamina += 10
+		if stamina >= max_stamina:
+			stamina = max_stamina
+			action = Action.WORK
+			if active_work:
+				target_position = active_work.position
+			
 	else:
 		_move_toward(delta)
 
 func _process_work(delta: float) -> void:
 	if active_work == null:
-		_switch_to_idle()
+		_find_work()
+		if active_work == null:
+			_switch_to_idle()
 		return
-
 	if _has_arrived(5):
 		_do_work()
 	else:
 		_move_toward(delta)
 
-func _process_eating(delta: float) -> void:
-	# Eating behavior is handled in _handle_hunger
-	pass
-
 func _process_idle(delta: float) -> void:
-	if stamina <= 10:
-		_switch_to_rest()
-		return
-	
+
 	if active_work == null:
 		_find_work()
 	
-	if active_work:
+	if active_work != null:
 		action = Action.WORK
-		target_position = active_work.position
-	else:
-		# fall back to wandering idle
-		super._process(delta)
 
 func _do_work() -> void:
 	if stamina <= 0:
 		return
 	if WorkQueue._do_work(active_work.cell, effort):
 		active_work = null
-	_switch_to_idle()
+
 	stamina -= effort
+	
 
 func _find_work() -> void:
 	active_work = WorkQueue._claim_work(position)
@@ -163,18 +151,19 @@ func _find_work() -> void:
 			print("Found work:", active_work["type"])
 		action = Action.WORK
 		target_position = active_work.position
+		print("setting target positiong to active ork position in _find_ork")
 
 # --- helpers ---
 func _switch_to_idle() -> void:
 	action = Action.IDLE
 	_start_idle()
 
-func _switch_to_rest() -> void:
+func _switch_to_rest(delta) -> void:
 	var cleric = CharacterRegistry._get_closest_cleric(position)
 	if cleric:
 		target_position = cleric
 		action = Action.REST
-		is_idle = false
+		_process_rest(delta)
 	else:
 		# no cleric? just wander
 		_switch_to_idle()

@@ -1,5 +1,6 @@
 extends TileMapLayer
 
+
 var terrain_source = 0
 var rogue_source = 0
 var dirt_atlas = Vector2i(5,10)
@@ -21,8 +22,8 @@ var bcl: Sprite2D = null
 
 func _ready() -> void:
 	Resources.food = 100000
-	for i in range(0,1):
-		_place_worker()
+	_place_worker()
+		
 	_set_terrain()
 
 func _on_dig_pressed() -> void: 
@@ -131,14 +132,15 @@ func _place_cleric() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 func _place_worker() -> void:
-	if Store._buy_worker():
-		var cl = worker.instantiate()
-		cl.position = get_local_mouse_position()
-		if bcl != null:
-			bcl.queue_free()
-		PlayerActions.current_action = null
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		add_child(cl)
+	for i in range(0,100):
+		if Store._buy_worker():
+			var cl = worker.instantiate()
+			cl.position = get_local_mouse_position()
+			if bcl != null:
+				bcl.queue_free()
+			PlayerActions.current_action = null
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+			add_child(cl)
 
 # --- INPUT HANDLING ----------------------------------------------------------
 

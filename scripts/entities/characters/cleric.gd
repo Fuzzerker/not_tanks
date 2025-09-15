@@ -1,4 +1,4 @@
-extends "res://scripts/idler.gd"
+extends "res://scripts/entities/base/idler.gd"
 
 var type = "cleric"
 var character_name = ""

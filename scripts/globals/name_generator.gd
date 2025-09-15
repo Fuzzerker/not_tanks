@@ -17,10 +17,6 @@ var vowels := [
 	"ai","au","ea","ee","ie","oa","oo","ou","ui"
 ]
 
-func _ready():
-	for i in range(10):
-		print(generate_pronounceable_word())
-
 func generate_pronounceable_word() -> String:
 	var length = randi_range(3, 7)
 	var word := ""

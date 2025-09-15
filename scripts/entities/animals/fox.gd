@@ -1,4 +1,4 @@
-extends "res://scripts/animal.gd"
+extends "res://scripts/entities/animals/animal.gd"
 
 # Fox - Carnivorous animal that hunts rats
 

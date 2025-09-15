@@ -1,4 +1,4 @@
-extends "res://scripts/animal.gd"
+extends "res://scripts/entities/animals/animal.gd"
 
 # Rat - Herbivorous animal that eats plants
 

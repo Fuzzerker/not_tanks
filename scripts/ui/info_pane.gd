@@ -13,6 +13,7 @@ var vboxChild: VBoxContainer = null
 var cur_gen = null;
 
 func _ready():
+	Resources.seeds = 1000
 	vboxChild = get_child(0).get_child(0) as VBoxContainer
 
 var log_interval = 2.0
@@ -21,14 +22,18 @@ var time_accrual = 0.0
 func _get_one_at_position():
 	for infoable in InformationRegistry.infoables:
 		var infoable_type = infoable.get("type")
-		print(infoable_type)
+		
 		if _unsafe(infoable):
 			continue
 		
 		var sprite_to_use: Sprite2D = null
 		
 		if infoable_type == "plant":
-			sprite_to_use = infoable.marker
+			# Additional safety check for marker access
+			if infoable.has_method("get") and infoable.get("marker") != null and is_instance_valid(infoable.marker):
+				sprite_to_use = infoable.marker
+			else:
+				continue  # Skip this infoable if marker is invalid
 		else:
 			sprite_to_use = infoable
 		#print(infoable, " pos: ", infoable.position, " mouse_pos: ", global, " ", " hasPoint ", infoable.get_rect().has_point(global))
@@ -52,6 +57,10 @@ func _get_one_at_position():
 	
 func _unsafe(infoable) -> bool:
 	var infoable_is_null = infoable == null
+	if infoable_is_null:
+		InformationRegistry.infoables.erase(infoable)
+		return true
+	
 	var info_queued_for_delete = infoable.is_queued_for_deletion()
 	var info_has_is_instance_valid = infoable.has_method("is_instance_valid")
 	var instance_valid = true
@@ -60,14 +69,18 @@ func _unsafe(infoable) -> bool:
 	
 	var marker_marked_null = true
 	var marker_marked_for_deletion = false
+	var marker_invalid = false
 	
 	if infoable is not Sprite2D:
-		if infoable.marker != null:
+		if infoable.has_method("get") and infoable.get("marker") != null:
+			var marker = infoable.marker
 			marker_marked_null = false
-			marker_marked_for_deletion = infoable.marker.is_queued_for_deletion()
+			marker_marked_for_deletion = marker.is_queued_for_deletion()
+			# Check if marker is a valid instance
+			marker_invalid = not is_instance_valid(marker)
 		
 	
-	if infoable_is_null or info_queued_for_delete or not instance_valid  or marker_marked_for_deletion:
+	if info_queued_for_delete or not instance_valid or marker_marked_for_deletion or marker_invalid:
 		InformationRegistry.infoables.erase(infoable)
 		return true
 		

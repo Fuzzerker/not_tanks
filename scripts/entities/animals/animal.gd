@@ -1,7 +1,6 @@
-extends "res://scripts/living_entity.gd"
+extends "res://scripts/entities/base/living_entity.gd"
 
 # Base class for all animals with eating behavior
-class_name Animal
 
 var current_food_target = null
 var eating_distance: float = 5.0
@@ -23,15 +22,11 @@ func _handle_hunger(delta: float) -> void:
 		
 		# If no food found, go idle
 		if current_food_target == null:
-			if not is_idle:
-				print("No food found, going idle")
-				_start_idle()
 			return
 		
 		# Found food, stop idling and go for it
 		target_position = current_food_target.position
 		print("Found food, moving to target")
-		is_idle = false
 	
 	# Move toward food target
 	if current_food_target != null:
@@ -45,7 +40,7 @@ func _find_food():
 	return null
 
 # Virtual method to be overridden by subclasses
-func _consume_food(food) -> void:
+func _consume_food(_food) -> void:
 	pass
 
 func _eat(food) -> void:
