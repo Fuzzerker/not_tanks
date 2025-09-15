@@ -48,11 +48,24 @@ func _consume_food(_food) -> bool:
 	return false
 
 func _eat(food) -> void:
+	current_food_target = null
 	while(hunger < 100):
 		var more = _consume_food(food)
-		current_food_target = null
+		
 		hunger += 1
 	
 	
 	# Reset back to idle after eating
-	
+
+# Serialization methods
+func serialize() -> Dictionary:
+	var data = super.serialize()
+	data["eating_distance"] = eating_distance
+	# Note: current_food_target is not serialized as it's a runtime reference
+	return data
+
+func deserialize(data: Dictionary):
+	super.deserialize(data)
+	if data.has("eating_distance"):
+		eating_distance = data.eating_distance
+	# current_food_target will be null on load and will be found again when needed

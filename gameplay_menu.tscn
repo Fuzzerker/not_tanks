@@ -19,10 +19,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -100.0
-offset_right = 150.0
-offset_bottom = 100.0
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -45,6 +45,44 @@ theme_override_constants/margin_bottom = 10
 [node name="ResumeButton" type="Button" parent="Panel/VBoxContainer/MarginContainer"]
 layout_mode = 2
 text = "Resume"
+
+[node name="HSeparator" type="HSeparator" parent="Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="SaveLoadContainer" type="VBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="SaveNameContainer" type="HBoxContainer" parent="Panel/VBoxContainer/SaveLoadContainer"]
+layout_mode = 2
+
+[node name="SaveNameLabel" type="Label" parent="Panel/VBoxContainer/SaveLoadContainer/SaveNameContainer"]
+layout_mode = 2
+text = "Save Name:"
+
+[node name="SaveNameInput" type="LineEdit" parent="Panel/VBoxContainer/SaveLoadContainer/SaveNameContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter save name..."
+
+[node name="ButtonContainer" type="HBoxContainer" parent="Panel/VBoxContainer/SaveLoadContainer"]
+layout_mode = 2
+
+[node name="SaveButton" type="Button" parent="Panel/VBoxContainer/SaveLoadContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Save Game"
+
+[node name="LoadButton" type="Button" parent="Panel/VBoxContainer/SaveLoadContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Load Game"
+
+[node name="SavesList" type="ItemList" parent="Panel/VBoxContainer/SaveLoadContainer"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="HSeparator2" type="HSeparator" parent="Panel/VBoxContainer"]
+layout_mode = 2
 
 [node name="MarginContainer2" type="MarginContainer" parent="Panel/VBoxContainer"]
 layout_mode = 2

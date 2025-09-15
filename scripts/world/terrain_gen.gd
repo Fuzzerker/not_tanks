@@ -31,6 +31,21 @@ func _ready() -> void:
 	# Get reference to the gameplay menu
 	gameplay_menu = get_node("../CanvasLayer/GameplayMenu")
 
+# Load a game save directly without UI dependencies
+func load_game_save(save_name: String) -> bool:
+	if save_name.is_empty():
+		push_error("Save name cannot be empty")
+		return false
+	
+	print("Loading game save: ", save_name)
+	# Load save data and restore to current scene (which should be the game scene)
+	var save_data = SaveSystem.load_save_data(save_name)
+	if save_data.is_empty():
+		push_error("Failed to load save data for: " + save_name)
+		return false
+	
+	return SaveSystem.restore_game_state(save_data)
+
 
 func _build_plants():
 	PlayerActions.current_action = "plant"
@@ -156,8 +171,6 @@ func _place_worker() -> void:
 			PlayerActions.current_action = null
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			add_child(cl)
-	if Resources.food > 100:
-		Resources.food = 1
 
 # --- INPUT HANDLING ----------------------------------------------------------
 

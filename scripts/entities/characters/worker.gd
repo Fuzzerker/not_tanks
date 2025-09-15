@@ -127,7 +127,7 @@ func _process_work(delta: float) -> void:
 	else:
 		_move_toward(delta)
 
-func _process_idle(delta: float) -> void:
+func _process_idle(_delta: float) -> void:
 
 	if active_work == null:
 		_find_work()
@@ -167,3 +167,38 @@ func _switch_to_rest(delta) -> void:
 	else:
 		# no cleric? just wander
 		_switch_to_idle()
+
+# Serialization methods
+func serialize() -> Dictionary:
+	var data = super.serialize()
+	data["action"] = action
+	data["effort"] = effort
+	data["stamina"] = stamina
+	data["max_stamina"] = max_stamina
+	data["rest_distance"] = rest_distance
+	data["character_name"] = character_name
+	data["eating_distance"] = eating_distance
+	# Note: active_work and current_food_source are not serialized as they're runtime references
+	return data
+
+func deserialize(data: Dictionary):
+	super.deserialize(data)
+	if data.has("action"):
+		action = data.action
+	if data.has("effort"):
+		effort = data.effort
+	if data.has("stamina"):
+		stamina = data.stamina
+	if data.has("max_stamina"):
+		max_stamina = data.max_stamina
+	if data.has("rest_distance"):
+		rest_distance = data.rest_distance
+	if data.has("character_name"):
+		character_name = data.character_name
+	if data.has("eating_distance"):
+		eating_distance = data.eating_distance
+	# active_work and current_food_source will be null on load and found when needed
+	
+	# Re-register with managers after deserialization
+	CharacterRegistry._add_character(self)
+	InformationRegistry._register(self)

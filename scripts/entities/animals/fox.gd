@@ -21,3 +21,17 @@ func _find_food():
 
 func _consume_food(food) -> bool:
 	AnimalManager._eat_animal(food)
+	return true
+
+# Serialization methods (inherits from animal.gd which handles most of it)
+func serialize() -> Dictionary:
+	var data = super.serialize()
+	# Fox-specific data (if any) would go here
+	return data
+
+func deserialize(data: Dictionary):
+	super.deserialize(data)
+	# Fox-specific deserialization (if any) would go here
+	
+	# Re-register with managers after deserialization
+	AnimalManager._register(self)

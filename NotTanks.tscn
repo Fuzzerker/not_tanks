@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://by3dirgdn0xiw"]
+[gd_scene load_steps=18 format=3 uid="uid://by3dirgdn0xiw"]
 
 [ext_resource type="Texture2D" uid="uid://csryrkfj4lfga" path="res://sprites/maptiles.png" id="1_v4jwb"]
 [ext_resource type="Script" uid="uid://c6mx4agli1n6c" path="res://scripts/ui/camera_control.gd" id="2_45neo"]
@@ -10,7 +10,6 @@
 [ext_resource type="Script" uid="uid://dde046qn2et2j" path="res://scripts/ui/food_label.gd" id="7_kr0b5"]
 [ext_resource type="Script" uid="uid://cxi6b84q1us22" path="res://scripts/ui/info_pane.gd" id="9_3fx1h"]
 [ext_resource type="PackedScene" uid="uid://btfvbo6sesb20" path="res://preloads/rat.tscn" id="11_qyiog"]
-[ext_resource type="Script" uid="uid://sgwdxphy0dp3" path="res://scripts/entities/animals/rat.gd" id="12_3fx1h"]
 [ext_resource type="PackedScene" uid="uid://c40ljumm3qmum" path="res://gameplay_menu.tscn" id="13_gameplay"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_45neo"]
@@ -405,7 +404,6 @@ mous_pos_label = NodePath("../CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2/
 script = ExtResource("2_45neo")
 
 [node name="Rat" parent="." instance=ExtResource("11_qyiog")]
-script = ExtResource("12_3fx1h")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

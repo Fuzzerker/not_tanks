@@ -21,3 +21,16 @@ func _consume_food(food) -> bool:
 	PlantManager._consume_plant(food)
 	food.health -= 1
 	return food.health > 0
+
+# Serialization methods (inherits from animal.gd which handles most of it)
+func serialize() -> Dictionary:
+	var data = super.serialize()
+	# Rat-specific data (if any) would go here
+	return data
+
+func deserialize(data: Dictionary):
+	super.deserialize(data)
+	# Rat-specific deserialization (if any) would go here
+	
+	# Re-register with managers after deserialization
+	AnimalManager._register(self)

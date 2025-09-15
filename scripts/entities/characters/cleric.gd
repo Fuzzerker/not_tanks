@@ -21,3 +21,18 @@ func _get_info():
 	inf["character_name"] = character_name
 	inf["type"] = type
 	return inf
+
+# Serialization methods
+func serialize() -> Dictionary:
+	var data = super.serialize()
+	data["character_name"] = character_name
+	return data
+
+func deserialize(data: Dictionary):
+	super.deserialize(data)
+	if data.has("character_name"):
+		character_name = data.character_name
+	
+	# Re-register with managers after deserialization
+	CharacterRegistry._add_character(self)
+	InformationRegistry._register(self)

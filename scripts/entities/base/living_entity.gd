@@ -72,3 +72,32 @@ func _update_hunger_and_health(delta: float) -> void:
 
 func _die() -> void:
 	queue_free()
+
+# Serialization methods
+func serialize() -> Dictionary:
+	var data = super.serialize()
+	data["max_health"] = max_health
+	data["health"] = health
+	data["hunger"] = hunger
+	data["hungry_interval"] = hungry_interval
+	data["hunger_threshold"] = hunger_threshold
+	data["type"] = type
+	data["_time_accumulator"] = _time_accumulator
+	return data
+
+func deserialize(data: Dictionary):
+	super.deserialize(data)
+	if data.has("max_health"):
+		max_health = data.max_health
+	if data.has("health"):
+		health = data.health
+	if data.has("hunger"):
+		hunger = data.hunger
+	if data.has("hungry_interval"):
+		hungry_interval = data.hungry_interval
+	if data.has("hunger_threshold"):
+		hunger_threshold = data.hunger_threshold
+	if data.has("type"):
+		type = data.type
+	if data.has("_time_accumulator"):
+		_time_accumulator = data._time_accumulator

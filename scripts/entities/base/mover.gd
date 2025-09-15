@@ -47,3 +47,22 @@ func _has_arrived(threshold: float) -> bool:
 	if log:
 		print("has_arrived = ", has_arrived, " @", position, " vs ", target_position)
 	return has_arrived
+
+# Serialization methods
+func serialize() -> Dictionary:
+	return {
+		"position": {"x": position.x, "y": position.y},
+		"speed": speed,
+		"target_position": {"x": target_position.x, "y": target_position.y},
+		"log": log
+	}
+
+func deserialize(data: Dictionary):
+	if data.has("position"):
+		position = Vector2(data.position.x, data.position.y)
+	if data.has("speed"):
+		speed = data.speed
+	if data.has("target_position"):
+		target_position = Vector2(data.target_position.x, data.target_position.y)
+	if data.has("log"):
+		log = data.log

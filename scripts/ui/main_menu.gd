@@ -1,11 +1,60 @@
 extends Control
 
+signal new_game
+signal load_game(save_name: String)
+
+@onready var load_dialog: AcceptDialog = $LoadGameDialog
+@onready var saves_list: ItemList = $LoadGameDialog/VBoxContainer/SavesList
+
 # Called when the Play button is pressed
 func _on_play_button_pressed():
-	# Load the main game scene
-	get_tree().change_scene_to_file("res://NotTanks.tscn")
+	new_game.emit()
+
+# Called when the Load Game button is pressed
+func _on_load_button_pressed():
+	_refresh_saves_list()
+	load_dialog.popup_centered()
 
 # Called when the Quit button is pressed
 func _on_quit_button_pressed():
-	# Quit the game
 	get_tree().quit()
+
+# Called when Load Selected button is pressed
+func _on_load_selected_pressed():
+	
+	var selected_items = saves_list.get_selected_items()
+	if selected_items.is_empty():
+		_show_message("Please select a save to load!")
+		return
+	
+	var save_name = saves_list.get_item_text(selected_items[0])
+	_load_game(save_name)
+
+# Called when Cancel button is pressed
+func _on_cancel_load_pressed():
+	load_dialog.hide()
+
+# Called when an item in the saves list is double-clicked
+func _on_saves_list_item_activated(index: int):
+	var save_name = saves_list.get_item_text(index)
+	_load_game(save_name)
+
+# Load a specific save game
+func _load_game(save_name: String):
+	load_dialog.hide()
+	load_game.emit(save_name)
+
+# Refresh the list of available saves
+func _refresh_saves_list():
+	saves_list.clear()
+	var saves = SaveSystem.get_save_list()
+	if saves.is_empty():
+		saves_list.add_item("No saves found")
+		saves_list.set_item_disabled(0, true)
+	else:
+		for save_name in saves:
+			saves_list.add_item(save_name)
+
+# Show a message to the user
+func _show_message(message: String):
+	print("Main Menu Message: ", message)
