@@ -4,3 +4,21 @@ extends Node
 var agua = 0
 var seeds = 5
 var food = 0
+
+# Serialize resources data for saving
+func serialize() -> Dictionary:
+	return {
+		"type": "resources",
+		"agua": agua,
+		"seeds": seeds,
+		"food": food
+	}
+
+# Deserialize resources data when loading
+func deserialize(data: Dictionary) -> void:
+	if data.has("agua"):
+		agua = data.agua
+	if data.has("seeds"):
+		seeds = data.seeds
+	if data.has("food"):
+		food = data.food

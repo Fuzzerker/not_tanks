@@ -115,12 +115,21 @@ func _collect_game_state() -> Dictionary:
 		"workers": [],
 		"clerics": [],
 		"rats": [],
-		"foxes": []
+		"foxes": [],
+		"plants": [],
+		"player_actions": {},
+		"resources": {}
 	}
 	
 	# Find all entities in the scene tree
 	var root = get_tree().current_scene
 	_collect_entities_recursive(root, game_state)
+	
+	# Collect plants from PlantManager
+	_collect_plants(game_state)
+	
+	# Collect global state data
+	_collect_global_data(game_state)
 	
 	return game_state
 
@@ -139,6 +148,8 @@ func _collect_entities_recursive(node: Node, game_state: Dictionary):
 				game_state.rats.append(entity_data)
 			"fox":
 				game_state.foxes.append(entity_data)
+			"plant":
+				game_state.plants.append(entity_data)
 	
 	# Recursively check children
 	for child in node.get_children():
@@ -149,11 +160,15 @@ func _restore_game_state(save_data: Dictionary):
 	# Clear existing entities first
 	_clear_existing_entities()
 	
+	# Clear existing plants from PlantManager
+	_clear_plants()
+	
 	# Load entity preloads
 	var worker_scene = preload("res://preloads/worker.tscn")
 	var cleric_scene = preload("res://preloads/cleric.tscn")
 	var rat_scene = preload("res://preloads/rat.tscn")
 	var fox_scene = preload("res://preloads/fox.tscn")
+	var plant_icon_scene = preload("res://preloads/plant_icon.tscn")
 	
 	# Get the main game node (where entities should be spawned)
 	var game_node = get_tree().current_scene
@@ -193,6 +208,35 @@ func _restore_game_state(save_data: Dictionary):
 			fox.deserialize(fox_data)  # Then deserialize
 		else:
 			push_error("Fox entity missing deserialize method")
+	
+	# Restore plants
+	for plant_data in save_data.get("plants", []):
+		# Create the plant marker sprite
+		var plant_marker = plant_icon_scene.instantiate()
+		game_node.add_child(plant_marker)
+		
+		# Set marker position
+		if plant_data.has("position"):
+			plant_marker.position = Vector2(plant_data.position.x, plant_data.position.y)
+		
+		# Create the plant object
+		var plant = Plant.new()
+		plant.marker = plant_marker
+		
+		# Deserialize plant data
+		if plant.has_method("deserialize"):
+			plant.deserialize(plant_data)
+		else:
+			push_error("Plant entity missing deserialize method")
+		
+		# Update the sprite to match plant's health level
+		_update_plant_sprite_for_load(plant)
+		
+		# Register the plant with the PlantManager
+		PlantManager._register(plant)
+	
+	# Restore global state data
+	_restore_global_data(save_data)
 
 # Clear all existing entities from the game
 func _clear_existing_entities():
@@ -208,7 +252,7 @@ func _clear_entities_recursive(node: Node):
 		var entity_data = node.serialize()
 		var entity_type = entity_data.get("type", "")
 		
-		if entity_type in ["worker", "cleric", "rat", "fox"]:
+		if entity_type in ["worker", "cleric", "rat", "fox", "plant"]:
 			node.queue_free()
 			return  # Don't process children of deleted nodes
 	
@@ -216,3 +260,68 @@ func _clear_entities_recursive(node: Node):
 	var children = node.get_children()
 	for i in range(children.size() - 1, -1, -1):
 		_clear_entities_recursive(children[i])
+
+# Collect plants from PlantManager
+func _collect_plants(game_state: Dictionary) -> void:
+	if PlantManager != null and PlantManager.has_method("_get_all_plants"):
+		var plants = PlantManager._get_all_plants()
+		for plant in plants:
+			if plant.has_method("serialize"):
+				game_state.plants.append(plant.serialize())
+	else:
+		# Fallback: access plants array directly if method doesn't exist
+		if PlantManager != null and "_plants" in PlantManager:
+			for plant in PlantManager._plants:
+				if plant.has_method("serialize"):
+					game_state.plants.append(plant.serialize())
+
+# Collect global state data from singletons
+func _collect_global_data(game_state: Dictionary) -> void:
+	# Collect PlayerActions data
+	if PlayerActions != null and PlayerActions.has_method("serialize"):
+		game_state.player_actions = PlayerActions.serialize()
+	
+	# Collect Resources data
+	if Resources != null and Resources.has_method("serialize"):
+		game_state.resources = Resources.serialize()
+
+# Helper function to update plant sprite during loading
+func _update_plant_sprite_for_load(plant: Plant) -> void:
+	var mrkr = plant.marker
+	
+	# Set the sprite to the seedling texture
+	var new_atlas := AtlasTexture.new()
+	new_atlas.atlas = preload("res://sprites/Seedling.png")
+	
+	# Calculate health level and sprite region
+	var health_level = int(plant.health / 25) + 1  # Every 25 health units = 1 sprite level
+	var atlas_y_offset = health_level * 16  # 16 pixels per level
+	
+	# Set the appropriate region based on health
+	new_atlas.region = Rect2(Vector2(13 * 16, 16 + atlas_y_offset), Vector2(16, 16))
+	mrkr.texture = new_atlas
+
+# Clear all plants from PlantManager
+func _clear_plants() -> void:
+	if PlantManager != null and PlantManager.has_method("_clear_all_plants"):
+		PlantManager._clear_all_plants()
+	else:
+		# Fallback: clear plants array directly if method doesn't exist
+		if PlantManager != null and "_plants" in PlantManager:
+			# First queue_free all plant markers
+			for plant in PlantManager._plants:
+				if plant.marker != null:
+					plant.marker.queue_free()
+				plant.queue_free()
+			# Clear the array
+			PlantManager._plants.clear()
+
+# Restore global state data from save data
+func _restore_global_data(save_data: Dictionary) -> void:
+	# Restore PlayerActions data
+	if save_data.has("player_actions") and PlayerActions != null and PlayerActions.has_method("deserialize"):
+		PlayerActions.deserialize(save_data.player_actions)
+	
+	# Restore Resources data
+	if save_data.has("resources") and Resources != null and Resources.has_method("deserialize"):
+		Resources.deserialize(save_data.resources)

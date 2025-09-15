@@ -105,3 +105,17 @@ func _gro_all() -> void:
 			_plants.erase(plant)
 			plant.marker.queue_free()
 			plant.queue_free()
+
+# Helper method for save system to get all plants
+func _get_all_plants() -> Array[Plant]:
+	return _plants.duplicate()
+
+# Helper method for save system to clear all plants
+func _clear_all_plants() -> void:
+	# First queue_free all plant markers and plants
+	for plant in _plants:
+		if plant.marker != null:
+			plant.marker.queue_free()
+		plant.queue_free()
+	# Clear the array
+	_plants.clear()
