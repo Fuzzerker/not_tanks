@@ -20,7 +20,7 @@ func serialize() -> Dictionary:
 	return {
 		"type": type,
 		"cell": {"x": cell.x, "y": cell.y},
-		"position": {"x": position.x, "y": position.y},
+		"position": SerializationUtils.serialize_vector2(position),
 		"status": status,
 		"effort": effort,
 		"command_data": command_data
@@ -33,7 +33,7 @@ func deserialize(data: Dictionary) -> void:
 	if data.has("cell"):
 		cell = Vector2i(data.cell.x, data.cell.y)
 	if data.has("position"):
-		position = Vector2(data.position.x, data.position.y)
+		position = SerializationUtils.deserialize_vector2(data.position)
 	if data.has("status"):
 		status = data.status
 	if data.has("effort"):

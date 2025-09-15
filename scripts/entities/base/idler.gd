@@ -35,7 +35,7 @@ func serialize() -> Dictionary:
 	var data = super.serialize()
 	data["MAX_OFFSET"] = MAX_OFFSET
 	data["pause_time"] = pause_time
-	data["idle_origin"] = {"x": idle_origin.x, "y": idle_origin.y}
+	data["idle_origin"] = SerializationUtils.serialize_vector2(idle_origin)
 	return data
 
 func deserialize(data: Dictionary) -> void:
@@ -45,4 +45,4 @@ func deserialize(data: Dictionary) -> void:
 	if data.has("pause_time"):
 		pause_time = data.pause_time
 	if data.has("idle_origin"):
-		idle_origin = Vector2(data.idle_origin.x, data.idle_origin.y)
+		idle_origin = SerializationUtils.deserialize_vector2(data.idle_origin)

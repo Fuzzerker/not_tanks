@@ -6,6 +6,10 @@ signal load_game(save_name: String)
 @onready var load_dialog: AcceptDialog = $LoadGameDialog
 @onready var saves_list: ItemList = $LoadGameDialog/VBoxContainer/SavesList
 
+func _ready() -> void:
+	# Connect the existing ItemList signals directly
+	saves_list.item_activated.connect(_on_saves_list_item_activated)
+
 # Called when the Play button is pressed
 func _on_play_button_pressed() -> void:
 	new_game.emit()
@@ -21,7 +25,6 @@ func _on_quit_button_pressed() -> void:
 
 # Called when Load Selected button is pressed
 func _on_load_selected_pressed() -> void:
-	
 	var selected_items: PackedInt32Array = saves_list.get_selected_items()
 	if selected_items.is_empty():
 		return

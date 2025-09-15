@@ -34,7 +34,7 @@ func serialize() -> Dictionary:
 		"max_total_gro": max_total_gro,
 		"total_gro": total_gro,
 		"cell": {"x": cell.x, "y": cell.y},
-		"position": {"x": position.x, "y": position.y}
+		"position": SerializationUtils.serialize_vector2(position)
 	}
 
 # Deserialize plant data when loading
@@ -52,7 +52,7 @@ func deserialize(data: Dictionary) -> void:
 	if data.has("cell"):
 		cell = Vector2i(data.cell.x, data.cell.y)
 	if data.has("position"):
-		position = Vector2(data.position.x, data.position.y)
+		position = SerializationUtils.deserialize_vector2(data.position)
 	if data.has("entity_type"):
 		entity_type = EntityTypes.string_to_type(data.entity_type)
 	elif data.has("type"):  # Legacy compatibility

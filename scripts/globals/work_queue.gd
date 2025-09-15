@@ -33,17 +33,13 @@ func _add_work(request: WorkRequest) -> void:
 	work_requests.push_back(request)
 
 func _claim_work(position: Vector2) -> WorkRequest:
-	var closest_request: WorkRequest = null
-	var closest_dist: float = INF
-
-	for request: WorkRequest in work_requests:
-		if request.status != "pending":
-			continue
-		var dist: float = position.distance_squared_to(request.position)
-		if dist < closest_dist:
-			closest_dist = dist
-			closest_request = request
-
+	var closest_node = SpatialUtils.find_closest_entity(
+		work_requests, 
+		position, 
+		func(request): return request.status == "pending"
+	)
+	var closest_request = closest_node as WorkRequest
+	
 	if closest_request:
 		closest_request.status = "assigned"
 	return closest_request

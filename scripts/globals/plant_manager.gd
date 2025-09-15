@@ -15,31 +15,11 @@ func _ready() -> void:
 	randomize()
 
 func _get_closest_plant(pos: Vector2) -> Plant:
-	var closest_plant: Plant = null
-	var closest_dist: float = INF
-
-	for plant: Plant in _plants:
-		var dist: float = pos.distance_squared_to(plant.position)
-		if dist < closest_dist:
-			closest_dist = dist
-			closest_plant = plant
-	
-	return closest_plant
+	return SpatialUtils.find_closest_entity(_plants, pos) as Plant
 
 # Get closest crop (excluding arbols) - for animals to eat
 func _get_closest_crop(pos: Vector2) -> Plant:
-	var closest_crop: Plant = null
-	var closest_dist: float = INF
-
-	for plant: Plant in _plants:
-		# Only consider crops, not arbols
-		if plant.entity_type == EntityTypes.EntityType.CROP:
-			var dist: float = pos.distance_squared_to(plant.position)
-			if dist < closest_dist:
-				closest_dist = dist
-				closest_crop = plant
-	
-	return closest_crop
+	return SpatialUtils.find_closest_by_type(_plants, pos, EntityTypes.EntityType.CROP) as Plant
 
 func _process(delta: float) -> void:
 	# delta is already scaled by Engine.time_scale

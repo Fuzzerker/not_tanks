@@ -8,20 +8,7 @@ func _register(animal) -> void:
 	animals.push_back(animal)
 
 func _get_closest_rat(pos: Vector2):
-	var closest_rat = null
-	var closest_dist: float = INF
-	
-	for animal in animals:
-		if animal == null:
-			continue
-		if animal.get("entity_type") != EntityTypes.EntityType.RAT:
-			continue
-		var dist: float = pos.distance_squared_to(animal.position)
-		if dist < closest_dist:
-			closest_dist = dist
-			closest_rat = animal
-		
-	return closest_rat
+	return SpatialUtils.find_closest_by_type(animals, pos, EntityTypes.EntityType.RAT)
 			
 
 func _eat_animal(animal) -> void:

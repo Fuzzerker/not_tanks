@@ -16,6 +16,7 @@ func _ready() -> void:
 	
 	# Connect saves list selection
 	saves_list.item_selected.connect(_on_save_selected)
+	saves_list.item_activated.connect(_on_save_double_clicked)
 
 func _on_resume_pressed() -> void:
 	resume_game.emit()
@@ -45,12 +46,16 @@ func _on_save_selected(index: int) -> void:
 	var save_name: String = saves_list.get_item_text(index)
 	save_name_input.text = save_name
 
+func _on_save_double_clicked(index: int) -> void:
+	var save_name: String = saves_list.get_item_text(index)
+	hide_menu()
+	load_game.emit(save_name)
+
 func _refresh_saves_list() -> void:
 	saves_list.clear()
 	var saves: Array = SaveSystem.get_save_list()
 	for save_name: String in saves:
 		saves_list.add_item(save_name)
-
 
 func show_menu() -> void:
 	visible = true
