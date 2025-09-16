@@ -9,7 +9,9 @@ enum EntityType {
 	FARMER,
 	CUTTER,
 	RAT,
-	FOX
+	FOX,
+	SMITHY,
+	HOUSE
 }
 
 # Convert enum to string for display/serialization
@@ -31,6 +33,10 @@ static func type_to_string(entity_type: EntityType) -> String:
 			return "rat"
 		EntityType.FOX:
 			return "fox"
+		EntityType.SMITHY:
+			return "smithy"
+		EntityType.HOUSE:
+			return "house"
 		_:
 			return "unknown"
 
@@ -53,6 +59,10 @@ static func string_to_type(type_str: String) -> EntityType:
 			return EntityType.RAT
 		"fox":
 			return EntityType.FOX
+		"smithy":
+			return EntityType.SMITHY
+		"house":
+			return EntityType.HOUSE
 		"plant":  # Legacy compatibility
 			return EntityType.CROP
 		_:

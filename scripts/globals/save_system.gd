@@ -5,6 +5,8 @@ extends Node
 # Import required classes
 const ArbolClass = preload("res://scripts/resources/tree.gd")
 const WorkCallbackFactory = preload("res://scripts/globals/work_callback_factory.gd")
+const Building = preload("res://scripts/resources/building.gd")
+const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
 const SAVE_DIR = "user://saves/"
 const SAVE_EXTENSION = ".json"
@@ -119,6 +121,7 @@ func _collect_game_state() -> Dictionary:
 		"rats": [],
 		"foxes": [],
 		"plants": [],
+		"buildings": [],
 		"player_actions": {},
 		"resources": {},
 		"work_queue": {},
@@ -295,6 +298,40 @@ func _restore_game_state(save_data: Dictionary):
 		# Register the plant with the PlantManager
 		PlantManager._register(plant)
 	
+	# Restore buildings
+	for building_data in save_data.get("buildings", []):
+		var building = Building.new()
+		building.deserialize(building_data)
+		
+		# Set entity type if not present (for backward compatibility)
+		if not building_data.has("entity_type"):
+			match building.building_type:
+				"smithy":
+					building.entity_type = EntityTypes.EntityType.SMITHY
+				"house":
+					building.entity_type = EntityTypes.EntityType.HOUSE
+				_:
+					building.entity_type = EntityTypes.EntityType.SMITHY
+		
+		# Create marker if not present (for backward compatibility)
+		if not building_data.has("marker_path") or building_data.marker_path == "":
+			var config = BuildingManager._get_building_config(building.building_type)
+			var marker_scene = config.marker_scene
+			var marker = marker_scene.instantiate()
+			game_node.add_child(marker)
+			marker.position = building.position
+			building.marker = marker
+		
+		# Set marker visibility based on construction status
+		if building.marker != null:
+			building.marker.visible = building.construction_complete
+		
+		BuildingManager._register_building(building)
+		
+		# If construction is complete, place the building sprite
+		if building.construction_complete:
+			game_node._place_completed_building(building)
+	
 	# Restore terrain data
 	_restore_terrain_data(save_data)
 	
@@ -337,6 +374,13 @@ func _collect_plants(game_state: Dictionary) -> void:
 			for plant in PlantManager._plants:
 				if plant.has_method("serialize"):
 					game_state.plants.append(plant.serialize())
+	
+	# Collect buildings data
+	if BuildingManager != null and BuildingManager.has_method("_get_all_buildings"):
+		var buildings = BuildingManager._get_all_buildings()
+		for building in buildings:
+			if building.has_method("serialize"):
+				game_state.buildings.append(building.serialize())
 
 # Collect global state data from singletons
 func _collect_global_data(game_state: Dictionary) -> void:
@@ -495,8 +539,8 @@ func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
 			if request_data.has("command_data"):
 				request.command_data = request_data.command_data
 			
-			# Recreate marker for dig/plant/chop work types
-			if request.type in ["dig", "crop", "chop"]:
+			# Recreate marker for dig/plant/chop/construction work types
+			if request.type in ["dig", "crop", "chop", "construction"]:
 				var marker_scene
 				match request.type:
 					"dig":
@@ -505,6 +549,8 @@ func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
 						marker_scene = plant_icon_scene
 					"chop":
 						marker_scene = preload("res://preloads/chop_icon.tscn")
+					"construction":
+						marker_scene = preload("res://preloads/construction_icon.tscn")
 				var marker = marker_scene.instantiate()
 				terrain_gen.add_child(marker)
 				

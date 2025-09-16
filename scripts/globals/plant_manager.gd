@@ -140,6 +140,7 @@ func _grow_crop(plant: Plant) -> void:
 				plant.agua = 6
 		WorkQueue._add_work(req)
 
+
 # Helper method for save system to get all plants
 func _get_all_plants() -> Array[Plant]:
 	return _plants.duplicate()

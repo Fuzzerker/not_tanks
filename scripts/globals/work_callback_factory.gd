@@ -18,6 +18,10 @@ static func create_callback(type: String, cell: Vector2i, command_data: Dictiona
 			return _create_agua_callback(command_data)
 		"chop":
 			return _create_chop_callback(command_data)
+		"collect_agua":
+			return _create_collect_agua_callback(command_data)
+		"construction":
+			return _create_construction_callback(command_data)
 		_:
 			push_warning("Unknown work type: " + type)
 			return Callable()
@@ -84,6 +88,7 @@ static func _create_agua_callback(command_data: Dictionary) -> Callable:
 				if plant.get_instance_id() == command_data.plant_id:
 					plant.agua = 6
 					break
+		# Note: The farmer's agua inventory is handled in the farmer's _do_work() override
 
 # Create chop callback from command data
 static func _create_chop_callback(command_data: Dictionary) -> Callable:
@@ -132,6 +137,34 @@ static func _create_chop_callback(command_data: Dictionary) -> Callable:
 						
 						req.on_complete = _create_chop_callback(req.command_data)
 						WorkQueue._add_work(req)
+					break
+
+# Create collect_agua callback from command data
+static func _create_collect_agua_callback(command_data: Dictionary) -> Callable:
+	return func():
+		if command_data.has("agua_tile"):
+			var agua_tile = Vector2i(command_data.agua_tile.x, command_data.agua_tile.y)
+			var terrain_gen = _get_terrain_gen()
+			if terrain_gen != null:
+				# Remove agua from global resources and revert tile to dirt
+				if Resources.agua > 0:
+					Resources.agua -= 1
+				terrain_gen.set_cell(agua_tile, 0, terrain_gen.dirt_atlas)
+				terrain_gen.agua_tiles.erase(agua_tile)
+				
+				# Give agua to the farmer who completed this work
+				# Note: We need to find the farmer and give them the agua
+				# This will be handled by the farmer's work completion logic
+
+# Create construction callback from command data
+static func _create_construction_callback(command_data: Dictionary) -> Callable:
+	return func():
+		if command_data.has("building_id"):
+			# Find the building and handle construction completion
+			for building in BuildingManager.buildings:
+				if building.get_instance_id() == command_data.building_id:
+					# Call the building manager's completion function
+					BuildingManager._complete_construction_work(building, Vector2i.ZERO)
 					break
 
 # Helper to get terrain generator - shared logic between both systems

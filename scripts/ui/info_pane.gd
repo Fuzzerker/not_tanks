@@ -35,6 +35,12 @@ func _get_one_at_position():
 				sprite_to_use = infoable.marker
 			else:
 				continue  # Skip this infoable if marker is invalid
+		elif infoable_type == EntityTypes.EntityType.SMITHY or infoable_type == EntityTypes.EntityType.HOUSE:
+			# Buildings have markers like plants
+			if infoable.has_method("get") and infoable.get("marker") != null and is_instance_valid(infoable.marker):
+				sprite_to_use = infoable.marker
+			else:
+				continue  # Skip this infoable if marker is invalid
 		else:
 			sprite_to_use = infoable
 		#print(infoable, " pos: ", infoable.position, " mouse_pos: ", global, " ", " hasPoint ", infoable.get_rect().has_point(global))

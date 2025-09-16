@@ -83,6 +83,20 @@ func _claim_work(position: Vector2, character_type: EntityTypes.EntityType = Ent
 		closest_request.status = "assigned"
 	return closest_request
 
+# Claim work of a specific type
+func _claim_specific_work(position: Vector2, work_type: String, character_type: EntityTypes.EntityType = EntityTypes.EntityType.WORKER) -> WorkRequest:
+	var closest_node = SpatialUtils.find_closest_entity(
+		work_requests, 
+		position, 
+		func(request): 
+			return request.status == "pending" and request.type == work_type and JobCapabilities.can_do_work(character_type, request.type)
+	)
+	var closest_request = closest_node as WorkRequest
+	
+	if closest_request:
+		closest_request.status = "assigned"
+	return closest_request
+
 # Serialize work queue data for saving
 func serialize() -> Dictionary:
 	var serialized_requests: Array = []

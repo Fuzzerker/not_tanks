@@ -26,6 +26,7 @@ PlantManager="*res://scripts/globals/plant_manager.gd"
 InformationRegistry="*res://scripts/globals/information_registry.gd"
 NameGenerator="*res://scripts/globals/name_generator.gd"
 AnimalManager="*res://scripts/globals/animal_manager.gd"
+BuildingManager="*res://scripts/globals/building_manager.gd"
 SaveSystem="*res://scripts/globals/save_system.gd"
 
 [display]

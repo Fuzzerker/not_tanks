@@ -973,6 +973,20 @@ layout_mode = 2
 layout_mode = 2
 text = "Chop"
 
+[node name="MarginContainerBuildSmithy" type="MarginContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons"]
+layout_mode = 2
+
+[node name="BuildSmithy" type="Button" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons/MarginContainerBuildSmithy"]
+layout_mode = 2
+text = "Build Smithy"
+
+[node name="MarginContainerBuildHouse" type="MarginContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons"]
+layout_mode = 2
+
+[node name="BuildHouse" type="Button" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons/MarginContainerBuildHouse"]
+layout_mode = 2
+text = "Build House"
+
 [node name="PlaceGroup" type="VBoxContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 
@@ -1039,6 +1053,22 @@ theme = SubResource("Theme_q56mv")
 [node name="Tree" type="Button" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer5"]
 layout_mode = 2
 text = "Tree"
+
+[node name="PanelContainerSmithy" type="PanelContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons"]
+layout_mode = 2
+theme = SubResource("Theme_q56mv")
+
+[node name="BuildSmithy" type="Button" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerSmithy"]
+layout_mode = 2
+text = "Smithy"
+
+[node name="PanelContainerHouse" type="PanelContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons"]
+layout_mode = 2
+theme = SubResource("Theme_q56mv")
+
+[node name="BuildHouse" type="Button" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerHouse"]
+layout_mode = 2
+text = "House"
 
 [node name="Panel2" type="PanelContainer" parent="CanvasLayer"]
 anchors_preset = 1
@@ -1243,6 +1273,8 @@ layout_mode = 2
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons/MarginContainer2/dig" to="TileMapLayer" method="_on_dig_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons/MarginContainer3/Plant" to="TileMapLayer" method="_on_plant_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons/MarginContainer4/Chop" to="TileMapLayer" method="_on_chop_pressed"]
+[connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons/MarginContainerBuildSmithy/BuildSmithy" to="TileMapLayer" method="_on_build_smithy_work_pressed"]
+[connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/WorkGroup/WorkButtons/MarginContainerBuildHouse/BuildHouse" to="TileMapLayer" method="_on_build_house_work_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer/BuildCleric" to="TileMapLayer" method="_on_build_cleric_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer2/BuildOrker" to="TileMapLayer" method="_on_build_worker_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerFarmer/BuildFarmer" to="TileMapLayer" method="_on_build_farmer_pressed"]
@@ -1250,6 +1282,8 @@ layout_mode = 2
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer3/SpawnRat" to="TileMapLayer" method="_on_spawn_rat_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer4/SpawnFox" to="TileMapLayer" method="_on_spawn_fox_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer5/Tree" to="TileMapLayer" method="_on_tree_pressed"]
+[connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerSmithy/BuildSmithy" to="TileMapLayer" method="_on_build_smithy_pressed"]
+[connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerHouse/BuildHouse" to="TileMapLayer" method="_on_build_house_pressed"]
 [connection signal="pressed" from="CanvasLayer/PanelContainer/HBoxContainer/MarginContainer4/SPeed don" to="TileMapLayer" method="_on_speed_don_pressed"]
 [connection signal="pressed" from="CanvasLayer/PanelContainer/HBoxContainer/MarginContainer5/Pause" to="TileMapLayer" method="_on_pause_pressed"]
 [connection signal="pressed" from="CanvasLayer/PanelContainer/HBoxContainer/MarginContainer6/SPeed up" to="TileMapLayer" method="_on_speed_up_pressed"]

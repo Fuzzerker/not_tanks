@@ -11,7 +11,9 @@ enum JobType {
 	PLANT, 
 	HARVEST,
 	AGUA,
-	CHOP
+	CHOP,
+	COLLECT_AGUA,
+	CONSTRUCTION
 }
 
 # Convert string work types to JobType enum
@@ -27,6 +29,10 @@ static func string_to_job_type(work_type: String) -> JobType:
 			return JobType.AGUA
 		"chop":
 			return JobType.CHOP
+		"collect_agua":
+			return JobType.COLLECT_AGUA
+		"construction":
+			return JobType.CONSTRUCTION
 		_:
 			push_warning("Unknown work type: " + work_type)
 			return JobType.DIG  # Default fallback
@@ -44,6 +50,10 @@ static func job_type_to_string(job_type: JobType) -> String:
 			return "agua"
 		JobType.CHOP:
 			return "chop"
+		JobType.COLLECT_AGUA:
+			return "collect_agua"
+		JobType.CONSTRUCTION:
+			return "construction"
 		_:
 			return "dig"
 
@@ -51,9 +61,9 @@ static func job_type_to_string(job_type: JobType) -> String:
 static func get_character_capabilities(entity_type: EntityTypes.EntityType) -> Array[JobType]:
 	match entity_type:
 		EntityTypes.EntityType.WORKER:
-			return [JobType.DIG, JobType.PLANT]  # Workers can only dig and plant
+			return [JobType.DIG, JobType.PLANT, JobType.CONSTRUCTION]  # Workers can dig, plant, and construct
 		EntityTypes.EntityType.FARMER:
-			return [JobType.PLANT, JobType.AGUA]  # Farmers can only plant and water
+			return [JobType.PLANT, JobType.AGUA, JobType.COLLECT_AGUA]  # Farmers can plant, water, and collect agua
 		EntityTypes.EntityType.CUTTER:
 			return [JobType.CHOP]  # Cutters can only chop trees
 		EntityTypes.EntityType.CLERIC:

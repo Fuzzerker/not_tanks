@@ -2,7 +2,11 @@ extends TileMapLayer
 
 # Import required classes
 const ArbolClass = preload("res://scripts/resources/tree.gd")
+const Building = preload("res://scripts/resources/building.gd")
 var EntityTypes = preload("res://scripts/globals/entity_types.gd")
+
+# Track dug tiles that have agua available for collection
+var agua_tiles: Array[Vector2i] = []
 
 var terrain_source = 0
 var rogue_source = 0
@@ -29,6 +33,7 @@ var dig_icon = preload("res://preloads/dig_icon.tscn")
 var plant_icon = preload("res://preloads/plant_icon.tscn")
 var tree_icon = preload("res://preloads/tree_icon.tscn")
 var chop_icon = preload("res://preloads/chop_icon.tscn")
+var construction_icon = preload("res://preloads/construction_icon.tscn")
 
 var bcl: Sprite2D = null
 var gameplay_menu: Control = null
@@ -124,6 +129,28 @@ func _build_dig_on_completed(clicked_cell: Vector2i, marker: Sprite2D) -> Callab
 		set_cell(clicked_cell, terrain_source, water_atlas)
 		marker.queue_free()
 		Resources.agua += 1
+		# Add this tile to agua collection sites
+		agua_tiles.append(clicked_cell)
+		
+		# Create collect_agua work immediately
+		var collect_req := WorkRequest.new()
+		collect_req.type = "collect_agua"
+		collect_req.cell = clicked_cell
+		collect_req.position = map_to_local(clicked_cell)
+		collect_req.effort = 10
+		
+		collect_req.command_data = {
+			"agua_tile": {"x": clicked_cell.x, "y": clicked_cell.y}
+		}
+		
+		collect_req.on_complete = func():
+			# Remove agua from global resources and revert tile
+			if Resources.agua > 0:
+				Resources.agua -= 1
+			set_cell(clicked_cell, terrain_source, dirt_atlas)
+			agua_tiles.erase(clicked_cell)
+		
+		WorkQueue._add_work(collect_req)
 
 func _build_plant_on_completed(clicked_cell: Vector2i, marker: Sprite2D) -> Callable:
 	return func():
@@ -162,6 +189,8 @@ func _create_work_icon(cell_pos) -> Sprite2D:
 				return _make_icon(plant_icon, cell_pos)
 		"chop":
 			return _make_icon(chop_icon, cell_pos)
+		"construction":
+			return _make_icon(construction_icon, cell_pos)
 	return null
 
 func _set_tile_action(clicked_cell: Vector2i) -> void:
@@ -288,7 +317,7 @@ func _place_cleric() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 func _place_worker() -> void:
-	for i in range(0,150):
+	for i in range(0,1):
 		if Store._buy_worker():
 			var cl = worker.instantiate()
 			cl.position = get_local_mouse_position()
@@ -364,7 +393,173 @@ func _place_arbol() -> void:
 	# Clear the action
 	PlayerActions.current_action = ""
 
-# --- INPUT HANDLING ----------------------------------------------------------
+# --- BUILDING PLACEMENT ------------------------------------------------------
+
+func _place_building(building_type: String) -> void:
+	# Snap to grid like plants do
+	var clicked_cell = local_to_map(get_local_mouse_position())
+	var snapped_position = map_to_local(clicked_cell)
+	
+	var config = BuildingManager._get_building_config(building_type)
+	
+	# Create building marker first to calculate size
+	var marker_scene = config.marker_scene
+	var marker = marker_scene.instantiate()
+	
+	# Calculate occupied cells based on sprite rectangle intersection
+	var marker_size = marker.texture.get_size()
+	var sprite_rect = Rect2(snapped_position, marker_size)
+	var tile_size = 32  # Assuming 32x32 tiles
+	
+	# Calculate which cells the sprite rectangle intersects
+	var occupied_cells: Array[Vector2i] = []
+	var min_cell = local_to_map(sprite_rect.position)
+	var max_cell = local_to_map(sprite_rect.position + sprite_rect.size)
+	
+	for x in range(min_cell.x, max_cell.x + 1):
+		for y in range(min_cell.y, max_cell.y + 1):
+			var cell_pos = Vector2i(x, y)
+			var cell_rect = Rect2(map_to_local(cell_pos), Vector2(tile_size, tile_size))
+			if sprite_rect.intersects(cell_rect):
+				occupied_cells.append(cell_pos)
+	
+	# Check if any cells are already occupied by work or other buildings
+	for cell in occupied_cells:
+		if WorkQueue._has_work(cell):
+			marker.queue_free()  # Clean up the marker
+			return  # Can't place building here
+	
+	# Add marker to scene with snapped position
+	add_child(marker)
+	marker.position = snapped_position
+	
+	# Create building
+	var building = Building.new()
+	building.building_type = building_type
+	building.position = snapped_position
+	building.marker = marker
+	building.construction_complete = false
+	
+	# Set entity type based on building type
+	match building_type:
+		"smithy":
+			building.entity_type = EntityTypes.EntityType.SMITHY
+		"house":
+			building.entity_type = EntityTypes.EntityType.HOUSE
+		_:
+			building.entity_type = EntityTypes.EntityType.SMITHY  # Default fallback
+	
+	# Register building and create construction work
+	BuildingManager._register_building(building)
+	BuildingManager._create_construction_work(building)
+	
+	# Clear the action
+	PlayerActions.current_action = ""
+
+# Create building work (construction jobs) instead of placing building directly
+func _create_building_work(building_type: String) -> void:
+	# Snap to grid like plants do
+	var clicked_cell = local_to_map(get_local_mouse_position())
+	var snapped_position = map_to_local(clicked_cell)
+	
+	var config = BuildingManager._get_building_config(building_type)
+	
+	# Create building marker first to calculate size and position
+	var marker_scene = config.marker_scene
+	var marker = marker_scene.instantiate()
+	add_child(marker)
+	marker.position = snapped_position
+	
+	# Calculate occupied cells based on sprite rectangle intersection
+	var marker_size = marker.texture.get_size()
+	var sprite_rect = Rect2(snapped_position, marker_size)
+	var tile_size = 32  # Assuming 32x32 tiles
+	
+	# Calculate which cells the sprite rectangle intersects
+	var occupied_cells: Array[Vector2i] = []
+	var min_cell = local_to_map(sprite_rect.position)
+	var max_cell = local_to_map(sprite_rect.position + sprite_rect.size)
+	
+	for x in range(min_cell.x, max_cell.x + 1):
+		for y in range(min_cell.y, max_cell.y + 1):
+			var cell_pos = Vector2i(x, y)
+			var cell_rect = Rect2(map_to_local(cell_pos), Vector2(tile_size, tile_size))
+			if sprite_rect.intersects(cell_rect):
+				occupied_cells.append(cell_pos)
+	
+	# Check if any cells are already occupied by work or other buildings
+	for cell in occupied_cells:
+		if WorkQueue._has_work(cell):
+			marker.queue_free()  # Clean up the marker
+			return  # Can't place building here
+	
+	# Hide the marker until construction is complete
+	#marker.visible = false
+	
+	# Create building with marker
+	var building = Building.new()
+	building.building_type = building_type
+	building.position = snapped_position
+	building.marker = marker
+	building.construction_complete = false
+	building.occupied_cells = occupied_cells
+	
+	# Set entity type based on building type
+	match building_type:
+		"smithy":
+			building.entity_type = EntityTypes.EntityType.SMITHY
+		"house":
+			building.entity_type = EntityTypes.EntityType.HOUSE
+		_:
+			building.entity_type = EntityTypes.EntityType.SMITHY  # Default fallback
+	
+	# Register building and create construction work
+	BuildingManager._register_building(building)
+	BuildingManager._create_construction_work(building)
+	
+	# Clear the action
+	PlayerActions.current_action = ""
+
+# Create construction work for a building (called by BuildingManager)
+func _create_building_construction_work(building: Building) -> void:
+	var config = BuildingManager._get_building_config(building.building_type)
+	
+	# Create construction work for each tile the building occupies
+	for cell in building.occupied_cells:
+		# Check if there's already work at this location
+		if WorkQueue._has_work(cell):
+			continue
+			
+		var req := WorkRequest.new()
+		req.type = "construction"
+		req.cell = cell
+		req.position = map_to_local(cell)
+		req.effort = config.construction_effort
+		
+		# Store command data for serialization
+		req.command_data = {
+			"building_id": building.get_instance_id(),
+			"building_type": building.building_type
+		}
+		
+		# Create construction icon
+		var icon = _create_construction_icon(cell)
+		if icon != null:
+			req.command_data["marker_path"] = str(icon.get_path())
+		
+		req.on_complete = func():
+			BuildingManager._complete_construction_work(building, cell)
+		
+		WorkQueue._add_work(req)
+
+# Create construction icon for a cell
+func _create_construction_icon(cell: Vector2i) -> Sprite2D:
+	var construction_icon_scene = preload("res://preloads/construction_icon.tscn")
+	var icon = construction_icon_scene.instantiate()
+	add_child(icon)
+	icon.position = map_to_local(cell)
+	return icon
+
 
 var clicked = false
 
@@ -377,6 +572,14 @@ func _tilemap_click() -> void:
 			_set_chop_action(clicked_cell)
 		"arbol":
 			_place_arbol()
+		"place_smithy":
+			_place_building("smithy")
+		"place_house":
+			_place_building("house")
+		"build_smithy":
+			_create_building_work("smithy")
+		"build_house":
+			_create_building_work("house")
 		"place_cleric":
 			_place_cleric()
 		"place_worker":
@@ -478,7 +681,18 @@ func _on_build_cutter_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	bcl = build_cutter.instantiate()
 	get_parent().add_child(bcl)
-	PlayerActions.current_action = "place_cutter"
+
+func _on_build_smithy_pressed() -> void:
+	PlayerActions.current_action = "place_smithy"
+
+func _on_build_house_pressed() -> void:
+	PlayerActions.current_action = "place_house"
+
+func _on_build_smithy_work_pressed() -> void:
+	PlayerActions.current_action = "build_smithy"
+
+func _on_build_house_work_pressed() -> void:
+	PlayerActions.current_action = "build_house"
 
 func _on_spawn_rat_pressed() -> void:
 	_cancel_action()
