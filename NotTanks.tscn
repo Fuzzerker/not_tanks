@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://by3dirgdn0xiw"]
+[gd_scene load_steps=23 format=3 uid="uid://by3dirgdn0xiw"]
 
 [ext_resource type="Texture2D" uid="uid://csryrkfj4lfga" path="res://sprites/maptiles.png" id="1_v4jwb"]
 [ext_resource type="Script" uid="uid://c6mx4agli1n6c" path="res://scripts/ui/camera_control.gd" id="2_45neo"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://cik54u1cji536" path="res://scripts/ui/logs_label.gd" id="8_logs"]
 [ext_resource type="Script" uid="uid://cxi6b84q1us22" path="res://scripts/ui/info_pane.gd" id="9_3fx1h"]
 [ext_resource type="PackedScene" uid="uid://c40ljumm3qmum" path="res://gameplay_menu.tscn" id="13_gameplay"]
+[ext_resource type="Script" uid="uid://wf8srueirf28" path="res://scripts/ui/gameplay_ui_controller.gd" id="gameplay_ui_controller"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_45neo"]
 texture = ExtResource("1_v4jwb")
@@ -927,6 +928,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 0
+script = ExtResource("gameplay_ui_controller")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Panel"]
 layout_mode = 1
@@ -934,9 +936,23 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -31.0
+offset_top = -60.0
 grow_horizontal = 2
 grow_vertical = 0
+
+[node name="MainButtons" type="HBoxContainer" parent="CanvasLayer/Panel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="WorkButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/MainButtons"]
+layout_mode = 2
+toggle_mode = true
+text = "Work"
+
+[node name="PlaceButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/MainButtons"]
+layout_mode = 2
+toggle_mode = true
+text = "Place"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/Panel/VBoxContainer"]
 layout_mode = 2

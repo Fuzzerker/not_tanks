@@ -13,6 +13,7 @@ var hunger_threshold: int = 50  # When to start looking for food
 var entity_type: EntityTypes.EntityType
 # Internal timer for hunger decay
 var _time_accumulator: float = 0.0
+var _entity_scene = null
 
 func _ready() -> void:
 	super()

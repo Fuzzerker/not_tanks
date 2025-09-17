@@ -395,6 +395,35 @@ func _place_arbol() -> void:
 
 # --- BUILDING PLACEMENT ------------------------------------------------------
 
+# Calculate which tiles are occupied by a building sprite using BuildingManager dimensions
+func _calculate_occupied_cells(marker: Sprite2D, building_type: String = "") -> Array[Vector2i]:
+	var occupied_cells: Array[Vector2i] = []
+	
+	# Get building dimensions from BuildingManager
+	var config = BuildingManager._get_building_config(building_type)
+	var size = config.get("dimensions", Vector2i(4, 4))
+	
+	# Configure the sprite atlas based on dimensions
+	BuildingManager._configure_building_sprite(marker, building_type)
+	
+	# Get the center tile position where the building is placed
+	var center_cell = local_to_map(marker.position)
+	
+	# Calculate the range of tiles around the center
+	# Handle both odd and even sized buildings properly
+	var start_x = -(size.x / 2)
+	var end_x = start_x + size.x
+	var start_y = -(size.y / 2)
+	var end_y = start_y + size.y
+	
+	# Generate occupied cells in a grid around the center
+	for x in range(start_x, end_x):
+		for y in range(start_y, end_y):
+			var cell_pos = center_cell + Vector2i(x, y)
+			occupied_cells.append(cell_pos)
+	
+	return occupied_cells
+
 func _place_building(building_type: String) -> void:
 	# Snap to grid like plants do
 	var clicked_cell = local_to_map(get_local_mouse_position())
@@ -406,22 +435,15 @@ func _place_building(building_type: String) -> void:
 	var marker_scene = config.marker_scene
 	var marker = marker_scene.instantiate()
 	
-	# Calculate occupied cells based on sprite rectangle intersection
-	var marker_size = marker.texture.get_size()
-	var sprite_rect = Rect2(snapped_position, marker_size)
-	var tile_size = 32  # Assuming 32x32 tiles
+	# Add marker to scene temporarily to get proper transform
+	add_child(marker)
+	marker.position = snapped_position
 	
-	# Calculate which cells the sprite rectangle intersects
-	var occupied_cells: Array[Vector2i] = []
-	var min_cell = local_to_map(sprite_rect.position)
-	var max_cell = local_to_map(sprite_rect.position + sprite_rect.size)
+	# Calculate occupied cells using shared helper function
+	var occupied_cells = _calculate_occupied_cells(marker, building_type)
 	
-	for x in range(min_cell.x, max_cell.x + 1):
-		for y in range(min_cell.y, max_cell.y + 1):
-			var cell_pos = Vector2i(x, y)
-			var cell_rect = Rect2(map_to_local(cell_pos), Vector2(tile_size, tile_size))
-			if sprite_rect.intersects(cell_rect):
-				occupied_cells.append(cell_pos)
+	# Remove marker temporarily - we'll add it back later
+	remove_child(marker)
 	
 	# Check if any cells are already occupied by work or other buildings
 	for cell in occupied_cells:
@@ -470,22 +492,8 @@ func _create_building_work(building_type: String) -> void:
 	add_child(marker)
 	marker.position = snapped_position
 	
-	# Calculate occupied cells based on sprite rectangle intersection
-	var marker_size = marker.texture.get_size()
-	var sprite_rect = Rect2(snapped_position, marker_size)
-	var tile_size = 32  # Assuming 32x32 tiles
-	
-	# Calculate which cells the sprite rectangle intersects
-	var occupied_cells: Array[Vector2i] = []
-	var min_cell = local_to_map(sprite_rect.position)
-	var max_cell = local_to_map(sprite_rect.position + sprite_rect.size)
-	
-	for x in range(min_cell.x, max_cell.x + 1):
-		for y in range(min_cell.y, max_cell.y + 1):
-			var cell_pos = Vector2i(x, y)
-			var cell_rect = Rect2(map_to_local(cell_pos), Vector2(tile_size, tile_size))
-			if sprite_rect.intersects(cell_rect):
-				occupied_cells.append(cell_pos)
+	# Calculate occupied cells using shared helper function
+	var occupied_cells = _calculate_occupied_cells(marker, building_type)
 	
 	# Check if any cells are already occupied by work or other buildings
 	for cell in occupied_cells:
@@ -493,8 +501,8 @@ func _create_building_work(building_type: String) -> void:
 			marker.queue_free()  # Clean up the marker
 			return  # Can't place building here
 	
-	# Hide the marker until construction is complete
-	#marker.visible = false
+	# Make the marker 50% translucent until construction is complete
+	marker.modulate.a = 0.5
 	
 	# Create building with marker
 	var building = Building.new()
@@ -548,6 +556,9 @@ func _create_building_construction_work(building: Building) -> void:
 			req.command_data["marker_path"] = str(icon.get_path())
 		
 		req.on_complete = func():
+			# Destroy the construction icon
+			if icon != null and is_instance_valid(icon):
+				icon.queue_free()
 			BuildingManager._complete_construction_work(building, cell)
 		
 		WorkQueue._add_work(req)

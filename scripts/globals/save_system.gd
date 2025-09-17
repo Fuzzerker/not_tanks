@@ -11,19 +11,24 @@ const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 const SAVE_DIR = "user://saves/"
 const SAVE_EXTENSION = ".json"
 
+var savables: Array = []
+
 func _ready():
 	# Ensure save directory exists
 	if not DirAccess.dir_exists_absolute(SAVE_DIR):
 		DirAccess.open("user://").make_dir_recursive("saves")
+		
+func _register(savable):
+	savables.push_back(savable)
+	
 
 # Save the current game state to a named file
 func save_game(save_name: String) -> bool:
 	if save_name.is_empty():
 		push_error("Save name cannot be empty")
 		return false
-	
-	var save_data = _collect_game_state()
-	var json_string = JSON.stringify(save_data)
+		
+	var json_string = JSON.stringify(savables)
 	
 	var file_path = SAVE_DIR + save_name + SAVE_EXTENSION
 	var file = FileAccess.open(file_path, FileAccess.WRITE)
@@ -42,6 +47,10 @@ func load_game(save_name: String) -> bool:
 	var save_data = load_save_data(save_name)
 	if save_data == null:
 		return false
+	
+	for savable in savables:
+		savables.erase(savable)
+		savable.queue_free()
 	
 	_restore_game_state(save_data)
 	return true
@@ -171,11 +180,7 @@ func _collect_entities_recursive(node: Node, game_state: Dictionary):
 
 # Restore game state from save data
 func _restore_game_state(save_data: Dictionary):
-	# Clear existing entities first
-	_clear_existing_entities()
 	
-	# Clear existing plants from PlantManager
-	_clear_plants()
 	
 	# Load entity preloads
 	var worker_scene = preload("res://preloads/worker.tscn")

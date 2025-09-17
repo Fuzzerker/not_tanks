@@ -10,11 +10,13 @@ var buildings: Array[Building] = []
 var building_configs = {
 	"smithy": {
 		"construction_effort": 100,
-		"marker_scene": preload("res://preloads/building_smithy.tscn")
+		"marker_scene": preload("res://preloads/building_smithy.tscn"),
+		"dimensions": Vector2i(5, 3)  # 5x3 tiles
 	},
 	"house": {
 		"construction_effort": 100,
-		"marker_scene": preload("res://preloads/building_house.tscn")
+		"marker_scene": preload("res://preloads/building_house.tscn"),
+		"dimensions": Vector2i(4, 4)  # 4x4 tiles
 	}
 }
 
@@ -23,7 +25,28 @@ func _register_building(building: Building) -> void:
 	InformationRegistry._register(building)
 
 func _get_building_config(building_type: String) -> Dictionary:
-	return building_configs.get(building_type, {"construction_effort": 100, "marker_scene": preload("res://preloads/building_smithy.tscn")})
+	return building_configs.get(building_type, {"construction_effort": 100, "marker_scene": preload("res://preloads/building_smithy.tscn"), "dimensions": Vector2i(4, 4)})
+
+# Configure building sprite atlas based on dimensions
+func _configure_building_sprite(marker: Sprite2D, building_type: String) -> void:
+	var config = _get_building_config(building_type)
+	var dimensions = config.get("dimensions", Vector2i(4, 4))
+	
+	# Set atlas texture region based on building dimensions
+	# The region size should match the tile dimensions (32 pixels per tile)
+	var tile_size = 32
+	var region_size = Vector2(dimensions.x * tile_size, dimensions.y * tile_size)
+	
+	# Create or modify the atlas texture
+	if marker.texture is AtlasTexture:
+		var atlas_texture = marker.texture as AtlasTexture
+		atlas_texture.region.size = region_size
+	else:
+		# If it's not an AtlasTexture, create one
+		var atlas_texture = AtlasTexture.new()
+		atlas_texture.atlas = marker.texture
+		atlas_texture.region = Rect2(Vector2.ZERO, region_size)
+		marker.texture = atlas_texture
 
 # Create construction work for a building
 func _create_construction_work(building: Building) -> void:
@@ -52,7 +75,7 @@ func _complete_construction_work(building: Building, _completed_cell: Vector2i) 
 		
 		# Show the marker if it exists (it should be hidden)
 		if building.marker != null:
-			building.marker.visible = true
+			building.marker.modulate.a = 1
 		
 		
 
