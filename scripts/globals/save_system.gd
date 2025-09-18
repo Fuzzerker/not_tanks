@@ -180,168 +180,161 @@ func _collect_entities_recursive(node: Node, game_state: Dictionary):
 
 # Restore game state from save data
 func _restore_game_state(save_data: Dictionary):
-	
+	return
 	
 	# Load entity preloads
-	var worker_scene = preload("res://preloads/worker.tscn")
-	var farmer_scene = preload("res://preloads/farmer.tscn")
-	var cutter_scene = preload("res://preloads/cutter.tscn")
-	var cleric_scene = preload("res://preloads/cleric.tscn")
-	var rat_scene = preload("res://preloads/rat.tscn")
-	var fox_scene = preload("res://preloads/fox.tscn")
-	var plant_icon_scene = preload("res://preloads/plant_icon.tscn")
-	var tree_icon_scene = preload("res://preloads/tree_icon.tscn")
-	
-	# Get the main game node (where entities should be spawned)
-	var game_node = get_tree().current_scene
-	
-	# Restore workers
-	for worker_data in save_data.get("workers", []):
-		var worker = worker_scene.instantiate()
-		game_node.add_child(worker)  # Add to scene first
-		if worker.has_method("deserialize"):
-			worker.deserialize(worker_data)  # Then deserialize (this will call _ready)
-		else:
-			push_error("Worker entity missing deserialize method")
-	
-	# Restore farmers
-	for farmer_data in save_data.get("farmers", []):
-		var farmer = farmer_scene.instantiate()
-		game_node.add_child(farmer)  # Add to scene first
-		if farmer.has_method("deserialize"):
-			farmer.deserialize(farmer_data)  # Then deserialize (this will call _ready)
-		else:
-			push_error("Farmer entity missing deserialize method")
-	
-	# Restore cutters
-	for cutter_data in save_data.get("cutters", []):
-		var cutter = cutter_scene.instantiate()
-		game_node.add_child(cutter)  # Add to scene first
-		if cutter.has_method("deserialize"):
-			cutter.deserialize(cutter_data)  # Then deserialize (this will call _ready)
-		else:
-			push_error("Cutter entity missing deserialize method")
-	
-	# Restore clerics
-	for cleric_data in save_data.get("clerics", []):
-		var cleric = cleric_scene.instantiate()
-		game_node.add_child(cleric)  # Add to scene first
-		if cleric.has_method("deserialize"):
-			cleric.deserialize(cleric_data)  # Then deserialize
-		else:
-			push_error("Cleric entity missing deserialize method")
-	
-	# Restore rats
-	for rat_data in save_data.get("rats", []):
-		var rat = rat_scene.instantiate()
-		game_node.add_child(rat)  # Add to scene first
-		if rat.has_method("deserialize"):
-			rat.deserialize(rat_data)  # Then deserialize
-		else:
-			push_error("Rat entity missing deserialize method")
-	
-	# Restore foxes
-	for fox_data in save_data.get("foxes", []):
-		var fox = fox_scene.instantiate()
-		game_node.add_child(fox)  # Add to scene first
-		if fox.has_method("deserialize"):
-			fox.deserialize(fox_data)  # Then deserialize
-		else:
-			push_error("Fox entity missing deserialize method")
-	
-	# Restore plants
-	for plant_data in save_data.get("plants", []):
-		# Determine plant type and create appropriate object
-		var plant_type: String = plant_data.get("entity_type", "crop")  # Default to crop for legacy saves
-		var plant = null
-		
-		if plant_type == "arbol":
-			# Create arbol with proper sprite
-			var arbol_marker = tree_icon_scene.instantiate()
-			game_node.add_child(arbol_marker)
-			
-			# Set marker position
-			if plant_data.has("position"):
-				arbol_marker.position = Vector2(plant_data.position.x, plant_data.position.y)
-			
-			# Set arbol texture to use same sprite as when created
-			var new_atlas := AtlasTexture.new()
-			new_atlas.atlas = preload("res://sprites/misc_tiles.png")
-			var atlas_loc = Vector2(3, 24)
-			var rect_size = Vector2(1,2)
-			new_atlas.region = Rect2(atlas_loc * 32, rect_size * 32)
-			arbol_marker.texture = new_atlas
-			
-			# Create arbol instance
-			plant = ArbolClass.new()
-			plant.marker = arbol_marker
-		else:
-			# Create crop with seedling sprite
-			var plant_marker = plant_icon_scene.instantiate()
-			game_node.add_child(plant_marker)
-			
-			# Set marker position
-			if plant_data.has("position"):
-				plant_marker.position = Vector2(plant_data.position.x, plant_data.position.y)
-			
-			# Create crop instance
-			plant = Plant.new()
-			plant.marker = plant_marker
-		
-		# Deserialize plant data
-		if plant.has_method("deserialize"):
-			plant.deserialize(plant_data)
-		else:
-			push_error("Plant entity missing deserialize method")
-		
-		# Update the sprite to match plant's health level and type
-		if plant_type == "arbol" and plant.has_method("update_scale"):
-			plant.update_scale()  # Use scaling for arbols
-		else:
-			_update_plant_sprite_for_load(plant)  # Use sprite changes for crops
-		
-		# Register the plant with the PlantManager
-		PlantManager._register(plant)
-	
-	# Restore buildings
-	for building_data in save_data.get("buildings", []):
-		var building = Building.new()
-		building.deserialize(building_data)
-		
-		# Set entity type if not present (for backward compatibility)
-		if not building_data.has("entity_type"):
-			match building.building_type:
-				"smithy":
-					building.entity_type = EntityTypes.EntityType.SMITHY
-				"house":
-					building.entity_type = EntityTypes.EntityType.HOUSE
-				_:
-					building.entity_type = EntityTypes.EntityType.SMITHY
-		
-		# Create marker if not present (for backward compatibility)
-		if not building_data.has("marker_path") or building_data.marker_path == "":
-			var config = BuildingManager._get_building_config(building.building_type)
-			var marker_scene = config.marker_scene
-			var marker = marker_scene.instantiate()
-			game_node.add_child(marker)
-			marker.position = building.position
-			building.marker = marker
-		
-		# Set marker visibility based on construction status
-		if building.marker != null:
-			building.marker.visible = building.construction_complete
-		
-		BuildingManager._register_building(building)
-		
-		# If construction is complete, place the building sprite
-		if building.construction_complete:
-			game_node._place_completed_building(building)
-	
-	# Restore terrain data
-	_restore_terrain_data(save_data)
-	
-	# Restore global state data
-	_restore_global_data(save_data)
+	#var scene = preload(sava_data["scene"])
+	#
+	## Get the main game node (where entities should be spawned)
+	#var game_node = get_tree().current_scene
+	#
+	## Restore workers
+	#for worker_data in save_data.get("workers", []):
+		#var worker = worker_scene.instantiate()
+		#game_node.add_child(worker)  # Add to scene first
+		#if worker.has_method("deserialize"):
+			#worker.deserialize(worker_data)  # Then deserialize (this will call _ready)
+		#else:
+			#push_error("Worker entity missing deserialize method")
+	#
+	## Restore farmers
+	#for farmer_data in save_data.get("farmers", []):
+		#var farmer = farmer_scene.instantiate()
+		#game_node.add_child(farmer)  # Add to scene first
+		#if farmer.has_method("deserialize"):
+			#farmer.deserialize(farmer_data)  # Then deserialize (this will call _ready)
+		#else:
+			#push_error("Farmer entity missing deserialize method")
+	#
+	## Restore cutters
+	#for cutter_data in save_data.get("cutters", []):
+		#var cutter = cutter_scene.instantiate()
+		#game_node.add_child(cutter)  # Add to scene first
+		#if cutter.has_method("deserialize"):
+			#cutter.deserialize(cutter_data)  # Then deserialize (this will call _ready)
+		#else:
+			#push_error("Cutter entity missing deserialize method")
+	#
+	## Restore clerics
+	#for cleric_data in save_data.get("clerics", []):
+		#var cleric = cleric_scene.instantiate()
+		#game_node.add_child(cleric)  # Add to scene first
+		#if cleric.has_method("deserialize"):
+			#cleric.deserialize(cleric_data)  # Then deserialize
+		#else:
+			#push_error("Cleric entity missing deserialize method")
+	#
+	## Restore rats
+	#for rat_data in save_data.get("rats", []):
+		#var rat = rat_scene.instantiate()
+		#game_node.add_child(rat)  # Add to scene first
+		#if rat.has_method("deserialize"):
+			#rat.deserialize(rat_data)  # Then deserialize
+		#else:
+			#push_error("Rat entity missing deserialize method")
+	#
+	## Restore foxes
+	#for fox_data in save_data.get("foxes", []):
+		#var fox = fox_scene.instantiate()
+		#game_node.add_child(fox)  # Add to scene first
+		#if fox.has_method("deserialize"):
+			#fox.deserialize(fox_data)  # Then deserialize
+		#else:
+			#push_error("Fox entity missing deserialize method")
+	#
+	## Restore plants
+	#for plant_data in save_data.get("plants", []):
+		## Determine plant type and create appropriate object
+		#var plant_type: String = plant_data.get("entity_type", "crop")  # Default to crop for legacy saves
+		#var plant = null
+		#
+		#if plant_type == "arbol":
+			## Create arbol with proper sprite
+			#var arbol_marker = tree_icon_scene.instantiate()
+			#game_node.add_child(arbol_marker)
+			#
+			## Set marker position
+			#if plant_data.has("position"):
+				#arbol_marker.position = Vector2(plant_data.position.x, plant_data.position.y)
+			#
+			## Set arbol texture to use same sprite as when created
+			#var new_atlas := AtlasTexture.new()
+			#new_atlas.atlas = preload("res://sprites/misc_tiles.png")
+			#var atlas_loc = Vector2(3, 24)
+			#var rect_size = Vector2(1,2)
+			#new_atlas.region = Rect2(atlas_loc * 32, rect_size * 32)
+			#arbol_marker.texture = new_atlas
+			#
+			## Create arbol instance
+			#plant = ArbolClass.new()
+			#plant.marker = arbol_marker
+		#else:
+			## Create crop with seedling sprite
+			#var plant_marker = plant_icon_scene.instantiate()
+			#game_node.add_child(plant_marker)
+			#
+			## Set marker position
+			#if plant_data.has("position"):
+				#plant_marker.position = Vector2(plant_data.position.x, plant_data.position.y)
+			#
+			## Create crop instance
+			#plant = Plant.new()
+			#plant.marker = plant_marker
+		#
+		## Deserialize plant data
+		#if plant.has_method("deserialize"):
+			#plant.deserialize(plant_data)
+		#else:
+			#push_error("Plant entity missing deserialize method")
+		#
+		## Update the sprite to match plant's health level and type
+		#if plant_type == "arbol" and plant.has_method("update_scale"):
+			#plant.update_scale()  # Use scaling for arbols
+		#else:
+			#_update_plant_sprite_for_load(plant)  # Use sprite changes for crops
+		#
+		## Register the plant with the PlantManager
+		#PlantManager._register(plant)
+	#
+	## Restore buildings
+	#for building_data in save_data.get("buildings", []):
+		#var building = Building.new()
+		#building.deserialize(building_data)
+		#
+		## Set entity type if not present (for backward compatibility)
+		#if not building_data.has("entity_type"):
+			#match building.building_type:
+				#"smithy":
+					#building.entity_type = EntityTypes.EntityType.SMITHY
+				#"house":
+					#building.entity_type = EntityTypes.EntityType.HOUSE
+				#_:
+					#building.entity_type = EntityTypes.EntityType.SMITHY
+		#
+		## Create marker if not present (for backward compatibility)
+		#if not building_data.has("marker_path") or building_data.marker_path == "":
+			#var config = BuildingManager._get_building_config(building.building_type)
+			#var marker_scene = config.marker_scene
+			#var marker = marker_scene.instantiate()
+			#game_node.add_child(marker)
+			#marker.position = building.position
+			#building.marker = marker
+		#
+		## Set marker visibility based on construction status
+		#if building.marker != null:
+			#building.marker.visible = building.construction_complete
+		#
+		#BuildingManager._register_building(building)
+		#
+		## If construction is complete, place the building sprite
+		#if building.construction_complete:
+			#game_node._place_completed_building(building)
+	#
+	## Restore terrain data
+	#_restore_terrain_data(save_data)
+	#
+	## Restore global state data
+	#_restore_global_data(save_data)
 
 # Clear all existing entities from the game
 func _clear_existing_entities():

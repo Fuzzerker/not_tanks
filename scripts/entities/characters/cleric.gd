@@ -1,38 +1,7 @@
-extends "res://scripts/entities/base/living_entity.gd"
+extends "res://scripts/entities/characters/working_character.gd"
 
-var character_name: String = ""
+# Worker - Human character specialized in digging and planting
+# Inherits all common working character functionality from WorkingCharacter
 
-func _process(delta: float) -> void:
-	pos_label.text = str(Vector2i(global_position))
-
-	super(delta)
-
-func _ready() -> void:
-	character_name = NameGenerator._generate_name()
-	entity_type = EntityTypes.EntityType.CLERIC
-	super._ready()
-	
-	InformationRegistry._register(self)
-	CharacterRegistry._add_character(self)
-
-
-func _get_info() -> Dictionary:
-	var inf: Dictionary = super()
-	inf["character_name"] = character_name
-	inf["entity_type"] = entity_type
-	return inf
-
-# Serialization methods
-func serialize() -> Dictionary:
-	var data: Dictionary = super.serialize()
-	data["character_name"] = character_name
-	return data
-
-func deserialize(data: Dictionary) -> void:
-	super.deserialize(data)
-	if data.has("character_name"):
-		character_name = data.character_name
-	
-	# Re-register with managers after deserialization
-	CharacterRegistry._add_character(self)
-	InformationRegistry._register(self)
+func _setup_character_type() -> void:
+	entity_type = EntityTypes.EntityType.WORKER

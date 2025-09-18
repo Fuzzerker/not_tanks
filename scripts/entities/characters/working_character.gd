@@ -1,4 +1,4 @@
-extends "res://scripts/entities/base/living_entity.gd"
+extends "res://scripts/entities/base/idler.gd"
 
 # Base class for all working characters (workers, farmers, etc.)
 # Handles work system, stamina, and eating mechanics
@@ -13,7 +13,7 @@ var active_work: WorkRequest = null
 
 var effort: int = 10
 var stamina: int = 1000
-var max_stamina: int = 1000
+var max_stamina: int = 100
 var rest_distance: float = 60.0
 var character_name: String = ""
 
@@ -24,6 +24,13 @@ var min_speed: float = 10.0    # Minimum speed when at 0 stamina
 # Eating system - working characters eat from stores/food sources
 var current_food_source: Node2D = null
 var eating_distance: float = 5.0
+
+var arrival_action: Action = Action.IDLE
+
+func _process(delta: float) -> void:
+	if target_position != null and not _has_arrived(1):
+		_move_toward(delta)
+			
 
 func _ready() -> void:
 	super()
@@ -36,7 +43,6 @@ func _ready() -> void:
 	# Set initial speed based on starting stamina
 	_update_speed()
 	
-	# Subclasses must set entity_type before calling this
 	_setup_character_type()
 	CharacterRegistry._add_character(self)
 
@@ -107,9 +113,14 @@ func _get_info() -> Dictionary:
 	info["speed_ratio"] = "%.1f%%" % ((speed / base_speed) * 100.0)
 	return info
 
-func _process(delta: float) -> void:
+func _process_tick(delta: float) -> bool:
+	print("action ", action)
+	if super(delta):
+		print("busy being alive ", action)
+		return true
+	
 	pos_label.text = str(Vector2i(global_position))
-	var free = super._process_live(delta, action == Action.IDLE)
+	
 	if stamina <= 0:
 		_switch_to_rest(delta)
 		
@@ -121,6 +132,9 @@ func _process(delta: float) -> void:
 				_process_work(delta)
 			Action.IDLE:
 				_process_idle(delta)
+
+	return false
+
 				
 func _handle_hunger(delta: float) -> void:
 	# Working characters have unique eating behavior - they eat from stores/food sources
@@ -138,8 +152,6 @@ func _handle_hunger(delta: float) -> void:
 	if current_food_source != null:
 		if _has_arrived(eating_distance):
 			_eat_from_source()
-		else:
-			_move_toward(delta)
 
 func _find_food_source() -> Node2D:
 	# Working characters eat from stores/food sources
@@ -177,9 +189,7 @@ func _process_rest(delta: float) -> void:
 			_set_action(Action.WORK, "stamina restored, ready to work")
 			if active_work:
 				target_position = active_work.position
-			
-	else:
-		_move_toward(delta)
+		
 
 func _process_work(delta: float) -> void:
 	if active_work == null:
@@ -191,8 +201,6 @@ func _process_work(delta: float) -> void:
 		return
 	if _has_arrived(5):
 		_do_work()
-	else:
-		_move_toward(delta)
 
 func _process_idle(_delta: float) -> void:
 	if active_work == null:
@@ -210,10 +218,11 @@ func _do_work() -> void:
 	stamina -= effort
 	_update_speed()  # Update speed when stamina decreases from work
 
-# Virtual method for subclasses to implement their specific work finding logic
 func _find_work() -> void:
-	# Override in subclasses to pass correct entity type to work queue
-	push_error("_find_work() must be implemented by subclasses")
+	active_work = WorkQueue._claim_work(position, entity_type)
+	if active_work:
+		action = Action.WORK
+		target_position = active_work.position
 
 # --- helpers ---
 func _switch_to_idle() -> void:

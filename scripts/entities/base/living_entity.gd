@@ -1,4 +1,4 @@
-extends "res://scripts/entities/base/idler.gd"
+extends "res://scripts/entities/base/mover.gd"
 
 # Base class for all living entities with health and hunger systems
 
@@ -18,6 +18,8 @@ var _entity_scene = null
 func _ready() -> void:
 	super()
 	InformationRegistry._register(self)
+	TimeManager._register(_process_tick)
+	
 
 func _get_info() -> Dictionary:
 	var info: Dictionary = super()
@@ -28,22 +30,20 @@ func _get_info() -> Dictionary:
 	info["hunger_threshold"] = hunger_threshold
 	return info
 
-#returns true if the caller is free to do something else
-#returns false if this entity is busy doing something regarding its living function
-func _process_live(delta: float, is_idle: bool) -> bool:
+func _process_tick(delta: float) -> bool:
 	pos_label.text = str(Vector2i(global_position))
 	_update_hunger_and_health(delta)
 	
-	if hunger < hunger_threshold:
-		_handle_hunger(delta)
-		
 	if health <= 0:
-		_die()
-		return false
-	
-	if is_idle:
-		super._process(delta)
-	return hunger > hunger_threshold
+		_die()	
+		return true
+	else: if hunger < hunger_threshold:
+		_handle_hunger(delta)
+		return true
+		
+	return false
+		
+
 		
 
 # Virtual method to be overridden by subclasses

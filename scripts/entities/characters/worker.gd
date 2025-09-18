@@ -5,10 +5,3 @@ extends "res://scripts/entities/characters/working_character.gd"
 
 func _setup_character_type() -> void:
 	entity_type = EntityTypes.EntityType.WORKER
-
-func _find_work() -> void:
-	# Pass worker type to work queue so it only returns dig/plant work
-	active_work = WorkQueue._claim_work(position, EntityTypes.EntityType.WORKER)
-	if active_work:
-		action = Action.WORK
-		target_position = active_work.position

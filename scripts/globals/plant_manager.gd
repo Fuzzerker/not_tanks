@@ -4,11 +4,6 @@ const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
 var _plants: Array[Plant] = []
 
-var grow_interval: float = .1
-
-# Internal timer
-var _time_accumulator: float = 0.0
-
 func _ready() -> void:
 	randomize()
 
@@ -19,13 +14,9 @@ func _get_closest_plant(pos: Vector2) -> Plant:
 func _get_closest_crop(pos: Vector2) -> Plant:
 	return SpatialUtils.find_closest_by_type(_plants, pos, EntityTypes.EntityType.CROP) as Plant
 
-func _process(delta: float) -> void:
-	# delta is already scaled by Engine.time_scale
-	_time_accumulator += delta
-	
-	if _time_accumulator >= grow_interval:
-		_time_accumulator -= grow_interval
-		_gro_all()
+func _process_tick() -> void:
+	_gro_all()
+		
 
 func _register(plant: Plant) -> void:
 

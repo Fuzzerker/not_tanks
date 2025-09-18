@@ -5,9 +5,6 @@ extends "res://scripts/entities/base/living_entity.gd"
 var current_food_target = null
 var eating_distance: float = 5.0
 
-func _process(delta:float) -> void:
-	super._process_live(delta, true)
-
 func _ready() -> void:
 	super()
 	AnimalManager._register(self)

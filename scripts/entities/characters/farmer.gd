@@ -5,9 +5,10 @@ extends "res://scripts/entities/characters/working_character.gd"
 
 var carried_agua: int = 0  # Amount of agua the farmer is carrying
 
-func _setup_character_type() -> void:
-	entity_type = EntityTypes.EntityType.FARMER
-
+func _ready():
+	base_speed = 10000
+	super()
+	
 func _find_work() -> void:
 	# Simplified farmer job logic:
 	# 1. Always do agua work if I have agua
@@ -37,33 +38,7 @@ func _find_work() -> void:
 		target_position = active_work.position
 
 # Override work completion to handle agua collection
-func _do_work() -> void:
-	if stamina <= 0:
-		return
-	
-	# Handle different work types
-	if active_work.type == "collect_agua":
-		if WorkQueue._do_work(active_work.cell, effort):
-			# Successfully collected agua - add to farmer's inventory
-			carried_agua += 1
-			active_work = null
-	elif active_work.type == "agua":
-		# Check if we have agua to give
-		if carried_agua > 0:
-			if WorkQueue._do_work(active_work.cell, effort):
-				# Successfully watered plant - remove agua from inventory
-				carried_agua -= 1
-				active_work = null
-		else:
-			# Don't have agua - abandon this work and look for collection work
-			active_work = null
-	else:
-		# Handle other work types normally
-		if WorkQueue._do_work(active_work.cell, effort):
-			active_work = null
 
-	stamina -= effort
-	_update_speed()  # Update speed when stamina decreases from work
 
 # Override info display to show agua inventory
 func _get_info() -> Dictionary:

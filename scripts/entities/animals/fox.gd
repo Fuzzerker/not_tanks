@@ -6,7 +6,7 @@ extends "res://scripts/entities/animals/animal.gd"
 func _ready() -> void:
 	super()
 	speed = 300
-	MAX_OFFSET = 200
+	#MAX_OFFSET = 200
 	max_health = 300
 	health = 300
 	hunger = 78
