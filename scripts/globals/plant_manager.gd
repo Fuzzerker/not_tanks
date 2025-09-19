@@ -4,6 +4,9 @@ const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
 var _plants: Array[Plant] = []
 
+func flush():
+	_plants = []
+
 func _ready() -> void:
 	TimeManager._register(_process_tick)
 	randomize()
@@ -37,7 +40,10 @@ func _update_plant_sprite(plant: Plant) -> void:
 			plant.update_scale()
 	else:
 		# Crops change sprite based on health (existing logic)
-		var health_level: int = int(plant.health / 25) + 1  # Every 25 health units = 1 sprite level
+		
+		var plant_gro_perc = float(plant.health) / float(plant.max_health) * 100
+		print("plant_gro_perc ", plant_gro_perc)
+		var health_level: int = int(plant_gro_perc / 25) + 1  # Every 25 health units = 1 sprite level
 		var atlas_y_offset: int = health_level * 16  # 16 pixels per level
 		
 		# Calculate the base position (assuming sprite starts at top of atlas)
@@ -59,6 +65,10 @@ func _gro_all() -> void:
 	
 	
 	for plant in _plants:
+		
+		if plant == null:
+			_plants.erase(plant)
+			continue
 		# Handle arbols differently from crops
 		if plant.entity_type == EntityTypes.EntityType.ARBOL:
 			_grow_arbol(plant)
@@ -70,6 +80,7 @@ func _gro_all() -> void:
 			_plants.erase(plant)
 			plant.marker.queue_free()
 			plant.queue_free()
+			
 
 func _grow_arbol(arbol: Plant) -> void:
 	# Arbols grow without water and don't generate harvest requests
@@ -122,12 +133,6 @@ func _grow_crop(plant: Plant) -> void:
 		req.cell = plant.cell
 		req.position = plant.position
 		req.effort = 100
-		req.on_complete = func():
-			Resources.food += int(plant.health / 10)
-			Resources.seeds += randi_range(1, 3)
-			plant.marker.queue_free()
-			plant.queue_free()
-			_plants.erase(plant)
 		WorkQueue._add_work(req)
 		return
 

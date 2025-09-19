@@ -16,8 +16,7 @@ func execute() -> void:
 	# Check if we're at the work location
 	if not character._has_arrived(10):
 		# Move to work location
-		character.target_position = character.active_work.position
-		character._move_toward()
+		character._set_target_position(character.active_work.position)
 		return
 	
 	# We're at the work location, execute the work

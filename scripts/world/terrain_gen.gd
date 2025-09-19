@@ -143,6 +143,9 @@ func _create_work_request(clicked_cell: Vector2i, marker: Sprite2D) -> void:
 				return
 			Resources.seeds -= 1
 			WorkQueue._add_work(_make_request("crop", clicked_cell, marker))
+		"chop":
+			WorkQueue._add_work(_make_request("chop", clicked_cell, marker))
+		
 
 func _create_work_icon(cell_pos) -> Sprite2D:
 	match PlayerActions.current_action:
@@ -159,18 +162,17 @@ func _create_work_icon(cell_pos) -> Sprite2D:
 
 func _set_tile_action(clicked_cell: Vector2i) -> void:
 	# Set tile action in a 3x3 radius around the clicked cell
-	for x in range(-1, 2):  # -1, 0, 1
-		for y in range(-1, 2):  # -1, 0, 1
-			var target_cell = clicked_cell + Vector2i(x, y)
+	
 			
-			# Skip if this cell already has work
-			if WorkQueue._has_work(target_cell):
-				continue
+	# Skip if this cell already has work
+	if WorkQueue._has_work(clicked_cell):
+		return
+	
+	# Create marker and work request for this cell
+	var marker = _create_work_icon(clicked_cell)
+	if marker:
+		_create_work_request(clicked_cell, marker)
 			
-			# Create marker and work request for this cell
-			var marker = _create_work_icon(target_cell)
-			if marker:
-				_create_work_request(target_cell, marker)
 
 func _set_chop_action(clicked_cell: Vector2i) -> void:
 	# Find arbol at this position first
@@ -181,17 +183,17 @@ func _set_chop_action(clicked_cell: Vector2i) -> void:
 	# Check if there's already a chop job for this specific arbol
 	if WorkQueue._has_chop_work_for_arbol(arbol.get_instance_id()):
 		return  # This arbol already has a chop job
-	
+	var arbol_cell = arbol.cell
 	# Check if there's already work at this specific cell (for other job types)
-	if WorkQueue._has_work(clicked_cell):
+	if WorkQueue._has_work(arbol_cell):
 		return
 	
 	# Create chop icon on top of the arbol
-	var marker = _make_icon(chop_icon, clicked_cell)
+	var marker = _make_icon(chop_icon, arbol_cell)
 	if marker:
 		# Make sure the chop icon appears on top of the arbol
 		marker.z_index = 1
-		_create_chop_work_request(clicked_cell, marker, arbol)
+		_create_work_request(arbol_cell, marker)
 
 func _find_arbol_at_position(world_pos: Vector2) -> Plant:
 	# Use PlantManager to find arbol at this position
@@ -203,23 +205,6 @@ func _find_arbol_at_position(world_pos: Vector2) -> Plant:
 			return closest_plant
 	return null
 
-func _create_chop_work_request(clicked_cell: Vector2i, marker: Sprite2D, arbol: Plant) -> void:
-	var req := WorkRequest.new()
-	req.type = "chop"
-	req.cell = clicked_cell
-	req.position = marker.position
-	req.effort = 100
-	
-	# Store command data for serialization
-	req.command_data = {
-		"marker_path": marker.get_path(),
-		"arbol_id": arbol.get_instance_id()
-	}
-	
-	# Create callback that damages the arbol and eventually harvests it
-	req.on_complete = _build_chop_on_completed(arbol, marker)
-	
-	WorkQueue._add_work(req)
 
 func _build_chop_on_completed(arbol: Plant, marker: Sprite2D) -> Callable:
 	return func():
@@ -649,6 +634,7 @@ func _on_build_cutter_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	bcl = build_cutter.instantiate()
 	get_parent().add_child(bcl)
+	PlayerActions.current_action = "place_cutter"
 
 func _on_build_smithy_pressed() -> void:
 	PlayerActions.current_action = "place_smithy"

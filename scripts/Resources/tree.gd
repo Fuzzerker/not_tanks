@@ -13,10 +13,10 @@ var base_position: Vector2  # Store the original base position for upward scalin
 func _init():
 	# Arbol-specific initialization
 	entity_type = EntityTypes.EntityType.ARBOL
-	max_health = 200
+	max_health = 10000
 	health = 1
-	agua = 0  # Arbols don't need water
-	max_total_gro = 200
+	agua = 1
+	max_total_gro = 20000
 	total_gro = 1
 	PlantManager._register(self)
 

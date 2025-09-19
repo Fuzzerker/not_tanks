@@ -16,7 +16,7 @@ func execute() -> void:
 	# Move toward target
 	var distance_to_target = character.global_position.distance_to(target_position)
 	if distance_to_target > arrival_distance:
-		character.target_position = target_position
+		character._set_target_position(target_position)
 	else:
 		# We've arrived
 		target_position = Vector2.ZERO

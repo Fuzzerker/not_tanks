@@ -4,9 +4,9 @@ class_name WorkingCharacter
 var character_name: String = ""
 
 # Stamina system
-var effort: int = 10
-var stamina: int = 1600
-var max_stamina: int = 100
+var effort: int = 100
+var stamina: int = 10000
+var max_stamina: int = 1000
 
 # Speed scaling based on stamina
 var base_speed: float = 100.0
@@ -26,19 +26,19 @@ var terrain_gen: TerrainGen = null
 
 func _ready() -> void:
 	character_name = NameGenerator._generate_name()
-	base_speed = 100.0
+	base_speed = 1000.0
 	var root = get_tree().root
 	#print("root ", root, " child ", root.get_child(0), " grandchild ", root.get_child(0).get_child(0))
 	terrain_gen = root.get_node("/root/Main/SceneContainer/Node2D/TileMapLayer") as TerrainGen
 	#_update_speed()
 	_setup_character_type()
 	CharacterRegistry._add_character(self)
-	#TimeManager._register(_process_tick)
+	TimeManager._register(_process_tick)
+	
 	# Initialize state machine based on character type
 	_setup_state_machine()
+	super()
 
-func _process(delta):
-	_process_tick()
 	
 func _process_tick():
 	if state_machine != null:

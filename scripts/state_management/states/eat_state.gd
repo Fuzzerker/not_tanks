@@ -20,7 +20,7 @@ func execute() -> void:
 	# Move to food source
 	var distance_to_food = character.global_position.distance_to(food_source.global_position)
 	if distance_to_food > character.eating_distance:
-		character.target_position = food_source.global_position
+		character._set_target_position(food_source.global_position)
 		return
 	
 	# We're at food source, eat

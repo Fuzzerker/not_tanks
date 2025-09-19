@@ -13,7 +13,8 @@ enum JobType {
 	AGUA,
 	CHOP,
 	COLLECT_AGUA,
-	CONSTRUCTION
+	CONSTRUCTION,
+	ARBOLIZING
 }
 
 # Convert string work types to JobType enum

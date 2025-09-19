@@ -18,8 +18,8 @@ static func create_callback(type: String, cell: Vector2i, marker: Sprite2D) -> C
 			return _create_harvest_callback(cell)
 		"agua":
 			return _create_agua_callback(cell, marker)
-		#"chop":
-			#return _create_chop_callback(command_data)
+		"chop":
+			return _create_chop_callback(cell, marker)
 		"collect_agua":
 			return _create_collect_agua_callback(cell)
 		"construction":
@@ -72,8 +72,9 @@ static func _create_harvest_callback(cell) -> Callable:
 			if plant.cell == cell:
 				if plant.marker:
 					plant.marker.queue_free()
-				plant.queue_free()
 				PlantManager._plants.erase(plant)
+				plant.queue_free()
+				
 				break
 
 # Create agua callback from command data
@@ -82,61 +83,43 @@ static func _create_agua_callback(cell, marker) -> Callable:
 		for plant in PlantManager._plants:
 			if plant.cell == cell:
 				marker.queue_free()
-				plant.agua = 6
+				plant.agua += 60
 				plant.agua_request_generated = false
 				break
 				
 		# Note: The farmer's agua inventory is handled in the farmer's _do_work() override
 
 # Create chop callback from command data
-static func _create_chop_callback(command_data: Dictionary) -> Callable:
+static func _create_chop_callback(cell, marker) -> Callable:
 	return func():
-		if command_data.has("arbol_id"):
+
 			# Find and damage the arbol
-			for plant in PlantManager._plants:
-				if plant.get_instance_id() == command_data.arbol_id:
-					plant.health -= 25  # Each chop does 25 damage
-					
-					# Update arbol scale to show shrinking
-					if plant.has_method("update_scale"):
-						plant.update_scale()
-					
-					if plant.health <= 0:
-						# Tree is fully chopped - give logs and remove tree
-						Resources.logs += plant.total_gro
-						
-						# Clean up this job's marker
-						if command_data.has("marker_path"):
-							var marker = _get_terrain_gen().get_node_or_null(command_data.marker_path)
-							if marker:
-								marker.queue_free()
-						
-						# Clean up any remaining chop jobs for this arbol
-						WorkQueue._destroy_chop_work_for_arbol(plant.get_instance_id())
-						
-						# Remove the arbol
-						PlantManager._plants.erase(plant)
-						if plant.marker:
-							plant.marker.queue_free()
-						plant.queue_free()
-					else:
-						# Tree still has health - the current job is complete, but we keep the marker
-						# and create another chop request using the same marker
-						var req := WorkRequest.new()
-						req.type = "chop"
-						req.cell = plant.cell
-						req.position = plant.position
-						req.effort = 100
-						
-						
-						req.command_data = {
-							"marker_path": command_data.marker_path,
-							"arbol_id": plant.get_instance_id()
-						}
-						
-						req.on_complete = _create_chop_callback(req.command_data)
-						WorkQueue._add_work(req)
-					break
+		for plant in PlantManager._plants:
+			if plant == null || plant.is_queued_for_deletion():
+				continue
+			if plant.cell == cell:
+				plant.health -= 25  # Each chop does 25 damage
+				
+				# Update arbol scale to show shrinking
+				if plant.has_method("update_scale"):
+					plant.update_scale()
+				
+				if plant.health <= 0:
+					plant.marker.queue_free()
+					PlantManager._plants.erase(plant)
+					plant.queue_free()
+					marker.queue_free()
+				else:
+					# Tree still has health - the current job is complete, but we keep the marker
+					# and create another chop request using the same marker
+					var req := WorkRequest.new()
+					req.type = "chop"
+					req.cell = plant.cell
+					req.position = plant.position
+					req.effort = 100
+					req.marker = marker
+					WorkQueue._add_work(req)
+				break
 
 # Create collect_agua callback from command data
 static func _create_collect_agua_callback(cell) -> Callable:

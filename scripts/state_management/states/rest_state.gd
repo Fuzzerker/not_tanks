@@ -15,12 +15,12 @@ func execute() -> void:
 	if character._has_arrived(10):
 		_restore_stamina()
 	else:
-		character._move_toward()
+		character._set_target_position(character.house.position)
 
 
 
 func on_enter() -> void:
-	character.target_position = character.house.position
+	character._set_target_position(character.house.position)
 
 func on_exit() -> void:
 	print("[%s] Exiting Rest State" % character.entity_type)

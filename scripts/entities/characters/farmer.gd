@@ -5,12 +5,9 @@ class_name Farmer
 var carried_agua: int = 0
 var max_agua: int = 3
 
-func _ready():
-	super()
-	
-	
+
 func _on_work_state_exit():
-	print("_on_work_state_exit ", last_work.type)
+	#print("_on_work_state_exit ", last_work.type)
 	if last_work != null and last_work.type == "agua":
 		carried_agua -= 1
 	if last_work != null and last_work.type == "collect_agua":
@@ -35,18 +32,3 @@ func _try_find_work() -> WorkRequest:
 			request = WorkQueue._claim_work(position, entity_type)
 	return request
 	
-
-func _get_info() -> Dictionary:
-	var info: Dictionary = super()
-	info["carried_agua"] = carried_agua
-	return info
-
-func serialize() -> Dictionary:
-	var data: Dictionary = super.serialize()
-	data["carried_agua"] = carried_agua
-	return data
-
-func deserialize(data: Dictionary) -> void:
-	#super.deserialize(data)
-	if data.has("carried_agua"):
-		carried_agua = data.carried_agua

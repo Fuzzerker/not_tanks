@@ -28,7 +28,12 @@ func save_game(save_name: String) -> bool:
 		push_error("Save name cannot be empty")
 		return false
 		
-	var json_string = JSON.stringify(savables)
+	var datas = []
+	
+	for savable in savables:
+		datas.push_back(savable.get_info())
+		
+	var json_string = JSON.stringify(datas)
 	
 	var file_path = SAVE_DIR + save_name + SAVE_EXTENSION
 	var file = FileAccess.open(file_path, FileAccess.WRITE)
@@ -41,32 +46,37 @@ func save_game(save_name: String) -> bool:
 	file.close()
 	
 	return true
-
-# Load game state from a named file (for in-game loading)
-func load_game(save_name: String) -> bool:
-	var save_data = load_save_data(save_name)
-	if save_data == null:
-		return false
-	
-	for savable in savables:
-		savables.erase(savable)
-		savable.queue_free()
-	
-	_restore_game_state(save_data)
-	return true
+#
+## Load game state from a named file (for in-game loading)
+#func load_game(save_name: String) -> bool:
+	#var save_data = load_save_data(save_name)
+	#if save_data == null:
+		#return false
+	#
+	#for savable in savables:
+		#savables.erase(savable)
+		#savable.queue_free()
+		#
+	#TimeManager.flush()
+	#PlantManager.flush()
+	#BuildingManager.flush()
+	#WorkQueue.flush()
+	#
+	#_restore_game_state(save_data)
+	#return true
 
 # Load save data from file without restoring to scene (for main menu loading)
-func load_save_data(save_name: String) -> Dictionary:
+func load_save_data(save_name: String) -> Array:
 	if save_name.is_empty():
 		push_error("Save name cannot be empty")
-		return {}
+		return []
 	
 	var file_path = SAVE_DIR + save_name + SAVE_EXTENSION
 	var file = FileAccess.open(file_path, FileAccess.READ)
 	
 	if file == null:
 		push_error("Failed to open save file: " + file_path)
-		return {}
+		return []
 	
 	var json_string = file.get_as_text()
 	file.close()
@@ -76,15 +86,20 @@ func load_save_data(save_name: String) -> Dictionary:
 	
 	if parse_result != OK:
 		push_error("Failed to parse save file JSON")
-		return {}
+		return []
 	
 	return json.data
 
 # Restore game state from save data (call this when game scene is active)
-func restore_game_state(save_data: Dictionary) -> bool:
+func restore_game_state(save_data: Array) -> bool:
 	if save_data.is_empty():
 		push_error("Save data is empty")
 		return false
+	
+	TimeManager.flush()
+	PlantManager.flush()
+	BuildingManager.flush()
+	WorkQueue.flush()
 	
 	_restore_game_state(save_data)
 	return true
@@ -118,68 +133,18 @@ func delete_save(save_name: String) -> bool:
 	
 	return dir.remove(save_name + SAVE_EXTENSION) == OK
 
-# Collect all entities and their states
-func _collect_game_state() -> Dictionary:
-	var game_state = {
-		"version": "1.0",
-		"timestamp": Time.get_unix_time_from_system(),
-		"workers": [],
-		"farmers": [],
-		"cutters": [],
-		"clerics": [],
-		"rats": [],
-		"foxes": [],
-		"plants": [],
-		"buildings": [],
-		"player_actions": {},
-		"resources": {},
-		"work_queue": {},
-		"terrain": {}
-	}
-	
-	# Find all entities in the scene tree
-	var root = get_tree().current_scene
-	_collect_entities_recursive(root, game_state)
-	
-	# Collect plants from PlantManager
-	_collect_plants(game_state)
-	
-	# Collect global state data
-	_collect_global_data(game_state)
-	
-	# Collect terrain data
-	_collect_terrain_data(game_state)
-	
-	return game_state
+var entity_preloads = []
 
-# Recursively collect entities from scene tree
-func _collect_entities_recursive(node: Node, game_state: Dictionary):
-	# Check if this node is an entity we want to save
-	if node.has_method("serialize"):
-		var entity_data = node.serialize()
+func _restore_game_state(save_data: Array):
+	for item in save_data:
+		var entity_type = EntityTypes.type_to_string(item["entity_type"])
+		var prel = load("res://preloads/"+entity_type+".tscn")
+		var inst = prel.instantiate()
 		
-		match entity_data.get("entity_type", ""):
-			"worker":
-				game_state.workers.append(entity_data)
-			"farmer":
-				game_state.farmers.append(entity_data)
-			"cutter":
-				game_state.cutters.append(entity_data)
-			"cleric":
-				game_state.clerics.append(entity_data)
-			"rat":
-				game_state.rats.append(entity_data)
-			"fox":
-				game_state.foxes.append(entity_data)
-			"crop", "arbol":
-				game_state.plants.append(entity_data)
+		inst.populate_from(item)
+		WorkCallbackFactory._get_terrain_gen().add_child(inst)
+		print(entity_type)
 	
-	# Recursively check children
-	for child in node.get_children():
-		_collect_entities_recursive(child, game_state)
-
-# Restore game state from save data
-func _restore_game_state(save_data: Dictionary):
 	return
 	
 	# Load entity preloads
@@ -335,234 +300,234 @@ func _restore_game_state(save_data: Dictionary):
 	#
 	## Restore global state data
 	#_restore_global_data(save_data)
-
-# Clear all existing entities from the game
-func _clear_existing_entities():
-	var root = get_tree().current_scene
-	_clear_entities_recursive(root)
-
-# Recursively clear entities from scene tree
-func _clear_entities_recursive(node: Node):
-	if node == null:
-		return
-	# Check if this node is an entity we want to clear
-	if node.has_method("serialize"):
-		var entity_data = node.serialize()
-		var entity_type = entity_data.get("entity_type", "")
-		
-		if entity_type in ["worker", "cleric", "rat", "fox", "crop", "arbol"]:
-			node.queue_free()
-			return  # Don't process children of deleted nodes
-	
-	# Process children (in reverse to avoid index issues with deletions)
-	var children = node.get_children()
-	for i in range(children.size() - 1, -1, -1):
-		_clear_entities_recursive(children[i])
-
-# Collect plants from PlantManager
-func _collect_plants(game_state: Dictionary) -> void:
-	if PlantManager != null and PlantManager.has_method("_get_all_plants"):
-		var plants = PlantManager._get_all_plants()
-		for plant in plants:
-			if plant.has_method("serialize"):
-				game_state.plants.append(plant.serialize())
-	else:
-		# Fallback: access plants array directly if method doesn't exist
-		if PlantManager != null and "_plants" in PlantManager:
-			for plant in PlantManager._plants:
-				if plant.has_method("serialize"):
-					game_state.plants.append(plant.serialize())
-	
-	# Collect buildings data
-	if BuildingManager != null and BuildingManager.has_method("_get_all_buildings"):
-		var buildings = BuildingManager._get_all_buildings()
-		for building in buildings:
-			if building.has_method("serialize"):
-				game_state.buildings.append(building.serialize())
-
-# Collect global state data from singletons
-func _collect_global_data(game_state: Dictionary) -> void:
-	# Collect PlayerActions data
-	if PlayerActions != null and PlayerActions.has_method("serialize"):
-		game_state.player_actions = PlayerActions.serialize()
-	
-	# Collect Resources data
-	if Resources != null and Resources.has_method("serialize"):
-		game_state.resources = Resources.serialize()
-	
-	# Collect WorkQueue data
-	if WorkQueue != null and WorkQueue.has_method("serialize"):
-		game_state.work_queue = WorkQueue.serialize()
-
-# Collect terrain data from the TileMapLayer
-func _collect_terrain_data(game_state: Dictionary) -> void:
-	
-	# Find the terrain generator (TileMapLayer) in the scene
-	var terrain_gen: TileMapLayer = _find_terrain_generator()
-	if terrain_gen != null and terrain_gen.has_method("serialize_tiles"):
-		game_state.terrain = terrain_gen.serialize_tiles()
-
-
-# Helper function to find the terrain generator in the scene
-func _find_terrain_generator() -> TileMapLayer:
-	var root: Node = get_tree().current_scene
-	if root != null:
-		# Look for the Main scene first
-		if root.has_method("load_scene"):  # This is the Main scene
-			# Access the current game scene through main's current_scene
-			if "current_scene" in root and root.current_scene != null:
-				var game_scene: Node = root.current_scene
-				# Try to find TileMapLayer in the game scene
-				var terrain_gen: Node = game_scene.get_node_or_null("TileMapLayer")
-				if terrain_gen is TileMapLayer:
-					return terrain_gen
-		else:
-			# We're directly in the game scene, look for TileMapLayer
-			var terrain_gen: Node = root.get_node_or_null("TileMapLayer")
-			if terrain_gen is TileMapLayer:
-				return terrain_gen
-	
-	return null
-
-# Restore terrain data from save data
-func _restore_terrain_data(save_data: Dictionary) -> void:
-	if not save_data.has("terrain"):
-		return
-	
-	
-	# Find the terrain generator
-	var terrain_gen: TileMapLayer = _find_terrain_generator()
-	if terrain_gen != null and terrain_gen.has_method("deserialize_tiles"):
-		terrain_gen.deserialize_tiles(save_data.terrain)
-
-
-# Helper function to update plant sprite during loading
-func _update_plant_sprite_for_load(plant: Plant) -> void:
-	var mrkr = plant.marker
-	
-	# Set the sprite to the seedling texture
-	var new_atlas := AtlasTexture.new()
-	new_atlas.atlas = preload("res://sprites/Seedling.png")
-	
-	# Calculate health level and sprite region
-	var health_level = int(plant.health / 25.0) + 1  # Every 25 health units = 1 sprite level
-	var atlas_y_offset = health_level * 16  # 16 pixels per level
-	
-	# Set the appropriate region based on health
-	new_atlas.region = Rect2(Vector2(13 * 16, 16 + atlas_y_offset), Vector2(16, 16))
-	mrkr.texture = new_atlas
-
-# Clear all plants from PlantManager
-func _clear_plants() -> void:
-	if PlantManager != null and PlantManager.has_method("_clear_all_plants"):
-		PlantManager._clear_all_plants()
-	else:
-		# Fallback: clear plants array directly if method doesn't exist
-		if PlantManager != null and "_plants" in PlantManager:
-			# First queue_free all plant markers
-			for plant in PlantManager._plants:
-				if plant.marker != null:
-					plant.marker.queue_free()
-				plant.queue_free()
-			# Clear the array
-			PlantManager._plants.clear()
-
-# Restore global state data from save data
-func _restore_global_data(save_data: Dictionary) -> void:
-	
-	# Restore PlayerActions data
-	if save_data.has("player_actions") and PlayerActions != null and PlayerActions.has_method("deserialize"):
-		PlayerActions.deserialize(save_data.player_actions)
-	
-	# Restore Resources data
-	if save_data.has("resources") and Resources != null and Resources.has_method("deserialize"):
-		Resources.deserialize(save_data.resources)
-	
-	# Restore WorkQueue data (must be done after scene setup)
-	if save_data.has("work_queue") and WorkQueue != null and WorkQueue.has_method("deserialize"):
-		_restore_work_queue_with_markers(save_data.work_queue)
-
-
-# Special restoration for work queue that recreates markers
-func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
-	# Clear existing work requests
-	WorkQueue._clear_all_work()
-	
-	# Get the terrain generator for marker creation
-	var tree = get_tree()
-	var main_node = tree.current_scene  # This is the Main node
-	
-	# Get the main scene manager to access current_scene
-	var main_script = main_node
-	if not main_script.has_method("load_scene"):
-		push_error("Main node does not have expected scene management methods")
-		return
-	
-	# Access the current game scene through the main script's current_scene variable
-	var terrain_gen = null
-	if "current_scene" in main_script:
-		var game_scene = main_script.current_scene
-		if game_scene != null and game_scene.has_method("map_to_local"):
-			terrain_gen = game_scene
-		else:
-			# Try to find TileMapLayer child
-			terrain_gen = game_scene.get_node("TileMapLayer") if game_scene != null else null
-	
-	if terrain_gen == null or not terrain_gen.has_method("map_to_local"):
-		push_error("Could not find terrain generator for work queue restoration")
-		return
-	
-	
-	# Load preloaded scenes for markers
-	var dig_icon_scene = preload("res://preloads/dig_icon.tscn")
-	var plant_icon_scene = preload("res://preloads/plant_icon.tscn")
-	
-	# Restore work requests
-	if work_queue_data.has("work_requests"):
-		for request_data in work_queue_data.work_requests:
-			var request = WorkRequest.new()
-			
-			# Deserialize basic data first
-			if request_data.has("type"):
-				request.type = request_data.type
-			if request_data.has("cell"):
-				request.cell = Vector2i(request_data.cell.x, request_data.cell.y)
-			if request_data.has("position"):
-				request.position = Vector2(request_data.position.x, request_data.position.y)
-			if request_data.has("status"):
-				# Reset all work to "pending" status since worker assignments are lost during load
-				request.status = "pending"
-			if request_data.has("effort"):
-				request.effort = request_data.effort
-			if request_data.has("command_data"):
-				request.command_data = request_data.command_data
-			
-			# Recreate marker for dig/plant/chop/construction work types
-			if request.type in ["dig", "crop", "chop", "construction"]:
-				var marker_scene
-				match request.type:
-					"dig":
-						marker_scene = dig_icon_scene
-					"crop":
-						marker_scene = plant_icon_scene
-					"chop":
-						marker_scene = preload("res://preloads/chop_icon.tscn")
-					"construction":
-						marker_scene = preload("res://preloads/construction_icon.tscn")
-				var marker = marker_scene.instantiate()
-				terrain_gen.add_child(marker)
-				
-				# Use the same positioning logic as new work creation
-				marker.position = terrain_gen.map_to_local(request.cell)
-				
-				# Update the request position to match the marker (in case of any rounding differences)
-				request.position = marker.position
-				
-				# Update command data with new marker path
-				request.command_data["marker_path"] = marker.get_path()
-			
-			# Reconstruct the callback using the shared factory
-			request.on_complete = WorkCallbackFactory.create_callback(request.type, request.cell, request.command_data)
-			
-			# Add to work queue using the same method as new work creation
-			WorkQueue._add_work(request)
+#
+## Clear all existing entities from the game
+#func _clear_existing_entities():
+	#var root = get_tree().current_scene
+	#_clear_entities_recursive(root)
+#
+## Recursively clear entities from scene tree
+#func _clear_entities_recursive(node: Node):
+	#if node == null:
+		#return
+	## Check if this node is an entity we want to clear
+	#if node.has_method("serialize"):
+		#var entity_data = node.serialize()
+		#var entity_type = entity_data.get("entity_type", "")
+		#
+		#if entity_type in ["worker", "cleric", "rat", "fox", "crop", "arbol"]:
+			#node.queue_free()
+			#return  # Don't process children of deleted nodes
+	#
+	## Process children (in reverse to avoid index issues with deletions)
+	#var children = node.get_children()
+	#for i in range(children.size() - 1, -1, -1):
+		#_clear_entities_recursive(children[i])
+#
+## Collect plants from PlantManager
+#func _collect_plants(game_state: Dictionary) -> void:
+	#if PlantManager != null and PlantManager.has_method("_get_all_plants"):
+		#var plants = PlantManager._get_all_plants()
+		#for plant in plants:
+			#if plant.has_method("serialize"):
+				#game_state.plants.append(plant.serialize())
+	#else:
+		## Fallback: access plants array directly if method doesn't exist
+		#if PlantManager != null and "_plants" in PlantManager:
+			#for plant in PlantManager._plants:
+				#if plant.has_method("serialize"):
+					#game_state.plants.append(plant.serialize())
+	#
+	## Collect buildings data
+	#if BuildingManager != null and BuildingManager.has_method("_get_all_buildings"):
+		#var buildings = BuildingManager._get_all_buildings()
+		#for building in buildings:
+			#if building.has_method("serialize"):
+				#game_state.buildings.append(building.serialize())
+#
+## Collect global state data from singletons
+#func _collect_global_data(game_state: Dictionary) -> void:
+	## Collect PlayerActions data
+	#if PlayerActions != null and PlayerActions.has_method("serialize"):
+		#game_state.player_actions = PlayerActions.serialize()
+	#
+	## Collect Resources data
+	#if Resources != null and Resources.has_method("serialize"):
+		#game_state.resources = Resources.serialize()
+	#
+	## Collect WorkQueue data
+	#if WorkQueue != null and WorkQueue.has_method("serialize"):
+		#game_state.work_queue = WorkQueue.serialize()
+#
+## Collect terrain data from the TileMapLayer
+#func _collect_terrain_data(game_state: Dictionary) -> void:
+	#
+	## Find the terrain generator (TileMapLayer) in the scene
+	#var terrain_gen: TileMapLayer = _find_terrain_generator()
+	#if terrain_gen != null and terrain_gen.has_method("serialize_tiles"):
+		#game_state.terrain = terrain_gen.serialize_tiles()
+#
+#
+## Helper function to find the terrain generator in the scene
+#func _find_terrain_generator() -> TileMapLayer:
+	#var root: Node = get_tree().current_scene
+	#if root != null:
+		## Look for the Main scene first
+		#if root.has_method("load_scene"):  # This is the Main scene
+			## Access the current game scene through main's current_scene
+			#if "current_scene" in root and root.current_scene != null:
+				#var game_scene: Node = root.current_scene
+				## Try to find TileMapLayer in the game scene
+				#var terrain_gen: Node = game_scene.get_node_or_null("TileMapLayer")
+				#if terrain_gen is TileMapLayer:
+					#return terrain_gen
+		#else:
+			## We're directly in the game scene, look for TileMapLayer
+			#var terrain_gen: Node = root.get_node_or_null("TileMapLayer")
+			#if terrain_gen is TileMapLayer:
+				#return terrain_gen
+	#
+	#return null
+#
+## Restore terrain data from save data
+#func _restore_terrain_data(save_data: Dictionary) -> void:
+	#if not save_data.has("terrain"):
+		#return
+	#
+	#
+	## Find the terrain generator
+	#var terrain_gen: TileMapLayer = _find_terrain_generator()
+	#if terrain_gen != null and terrain_gen.has_method("deserialize_tiles"):
+		#terrain_gen.deserialize_tiles(save_data.terrain)
+#
+#
+## Helper function to update plant sprite during loading
+#func _update_plant_sprite_for_load(plant: Plant) -> void:
+	#var mrkr = plant.marker
+	#
+	## Set the sprite to the seedling texture
+	#var new_atlas := AtlasTexture.new()
+	#new_atlas.atlas = preload("res://sprites/Seedling.png")
+	#
+	## Calculate health level and sprite region
+	#var health_level = int(plant.health / 25.0) + 1  # Every 25 health units = 1 sprite level
+	#var atlas_y_offset = health_level * 16  # 16 pixels per level
+	#
+	## Set the appropriate region based on health
+	#new_atlas.region = Rect2(Vector2(13 * 16, 16 + atlas_y_offset), Vector2(16, 16))
+	#mrkr.texture = new_atlas
+#
+## Clear all plants from PlantManager
+#func _clear_plants() -> void:
+	#if PlantManager != null and PlantManager.has_method("_clear_all_plants"):
+		#PlantManager._clear_all_plants()
+	#else:
+		## Fallback: clear plants array directly if method doesn't exist
+		#if PlantManager != null and "_plants" in PlantManager:
+			## First queue_free all plant markers
+			#for plant in PlantManager._plants:
+				#if plant.marker != null:
+					#plant.marker.queue_free()
+				#plant.queue_free()
+			## Clear the array
+			#PlantManager._plants.clear()
+#
+## Restore global state data from save data
+#func _restore_global_data(save_data: Dictionary) -> void:
+	#
+	## Restore PlayerActions data
+	#if save_data.has("player_actions") and PlayerActions != null and PlayerActions.has_method("deserialize"):
+		#PlayerActions.deserialize(save_data.player_actions)
+	#
+	## Restore Resources data
+	#if save_data.has("resources") and Resources != null and Resources.has_method("deserialize"):
+		#Resources.deserialize(save_data.resources)
+	#
+	## Restore WorkQueue data (must be done after scene setup)
+	#if save_data.has("work_queue") and WorkQueue != null and WorkQueue.has_method("deserialize"):
+		#_restore_work_queue_with_markers(save_data.work_queue)
+#
+#
+## Special restoration for work queue that recreates markers
+#func _restore_work_queue_with_markers(work_queue_data: Dictionary) -> void:
+	## Clear existing work requests
+	#WorkQueue._clear_all_work()
+	#
+	## Get the terrain generator for marker creation
+	#var tree = get_tree()
+	#var main_node = tree.current_scene  # This is the Main node
+	#
+	## Get the main scene manager to access current_scene
+	#var main_script = main_node
+	#if not main_script.has_method("load_scene"):
+		#push_error("Main node does not have expected scene management methods")
+		#return
+	#
+	## Access the current game scene through the main script's current_scene variable
+	#var terrain_gen = null
+	#if "current_scene" in main_script:
+		#var game_scene = main_script.current_scene
+		#if game_scene != null and game_scene.has_method("map_to_local"):
+			#terrain_gen = game_scene
+		#else:
+			## Try to find TileMapLayer child
+			#terrain_gen = game_scene.get_node("TileMapLayer") if game_scene != null else null
+	#
+	#if terrain_gen == null or not terrain_gen.has_method("map_to_local"):
+		#push_error("Could not find terrain generator for work queue restoration")
+		#return
+	#
+	#
+	## Load preloaded scenes for markers
+	#var dig_icon_scene = preload("res://preloads/dig_icon.tscn")
+	#var plant_icon_scene = preload("res://preloads/plant_icon.tscn")
+	#
+	## Restore work requests
+	#if work_queue_data.has("work_requests"):
+		#for request_data in work_queue_data.work_requests:
+			#var request = WorkRequest.new()
+			#
+			## Deserialize basic data first
+			#if request_data.has("type"):
+				#request.type = request_data.type
+			#if request_data.has("cell"):
+				#request.cell = Vector2i(request_data.cell.x, request_data.cell.y)
+			#if request_data.has("position"):
+				#request.position = Vector2(request_data.position.x, request_data.position.y)
+			#if request_data.has("status"):
+				## Reset all work to "pending" status since worker assignments are lost during load
+				#request.status = "pending"
+			#if request_data.has("effort"):
+				#request.effort = request_data.effort
+			#if request_data.has("command_data"):
+				#request.command_data = request_data.command_data
+			#
+			## Recreate marker for dig/plant/chop/construction work types
+			#if request.type in ["dig", "crop", "chop", "construction"]:
+				#var marker_scene
+				#match request.type:
+					#"dig":
+						#marker_scene = dig_icon_scene
+					#"crop":
+						#marker_scene = plant_icon_scene
+					#"chop":
+						#marker_scene = preload("res://preloads/chop_icon.tscn")
+					#"construction":
+						#marker_scene = preload("res://preloads/construction_icon.tscn")
+				#var marker = marker_scene.instantiate()
+				#terrain_gen.add_child(marker)
+				#
+				## Use the same positioning logic as new work creation
+				#marker.position = terrain_gen.map_to_local(request.cell)
+				#
+				## Update the request position to match the marker (in case of any rounding differences)
+				#request.position = marker.position
+				#
+				## Update command data with new marker path
+				#request.command_data["marker_path"] = marker.get_path()
+			#
+			## Reconstruct the callback using the shared factory
+			#request.on_complete = WorkCallbackFactory.create_callback(request.type, request.cell, request.command_data)
+			#
+			## Add to work queue using the same method as new work creation
+			#WorkQueue._add_work(request)

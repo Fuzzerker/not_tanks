@@ -32,6 +32,7 @@ EntitySceneLookup="*res://scripts/globals/entity_scene_lookup.gd"
 EntityTypes="*res://scripts/globals/entity_types.gd"
 TimeManager="*res://scripts/globals/time_manager.gd"
 WorkDefinitions="*res://scripts/work_executor.gd"
+IdGenerator="*res://id_generator.gd"
 
 [display]
 

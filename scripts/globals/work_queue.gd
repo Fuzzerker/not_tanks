@@ -6,6 +6,9 @@ const JobCapabilities = preload("res://scripts/globals/job_capabilities.gd")
 
 var work_requests: Array[WorkRequest] = []
 
+func flush():
+	work_requests = []
+
 func _has_work(cell: Vector2i) -> bool:
 	for request: WorkRequest in work_requests:
 		if request.cell == cell:

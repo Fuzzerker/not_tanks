@@ -9,11 +9,11 @@ const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 @export var position: Vector2
 
 var health: int = 1
-var max_health: int = 100
+var max_health: int = 1000
 var agua: int = 0
 var agua_request_generated = false
 var entity_type: EntityTypes.EntityType = EntityTypes.EntityType.CROP
-var max_total_gro: int = 100
+var max_total_gro: int = 1000
 var total_gro: int = 1
 func _get_info() -> Dictionary:
 	

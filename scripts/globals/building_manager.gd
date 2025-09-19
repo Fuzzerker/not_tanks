@@ -6,6 +6,8 @@ const WorkRequest = preload("res://scripts/resources/work_request.gd")
 
 var buildings: Array[Building] = []
 
+func flush():
+	buildings = []
 # Building type configurations
 var building_configs = {
 	"smithy": {
