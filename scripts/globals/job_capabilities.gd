@@ -63,7 +63,7 @@ static func get_character_capabilities(entity_type: EntityTypes.EntityType) -> A
 		EntityTypes.EntityType.WORKER:
 			return [JobType.DIG, JobType.PLANT, JobType.CONSTRUCTION]  # Workers can dig, plant, and construct
 		EntityTypes.EntityType.FARMER:
-			return [JobType.PLANT, JobType.AGUA, JobType.COLLECT_AGUA]  # Farmers can plant, water, and collect agua
+			return [JobType.PLANT, JobType.AGUA, JobType.COLLECT_AGUA, JobType.HARVEST]  # Farmers can plant, water, and collect agua
 		EntityTypes.EntityType.CUTTER:
 			return [JobType.CHOP]  # Cutters can only chop trees
 		EntityTypes.EntityType.CLERIC:

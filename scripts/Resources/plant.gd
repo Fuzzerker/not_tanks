@@ -11,6 +11,7 @@ const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 var health: int = 1
 var max_health: int = 100
 var agua: int = 0
+var agua_request_generated = false
 var entity_type: EntityTypes.EntityType = EntityTypes.EntityType.CROP
 var max_total_gro: int = 100
 var total_gro: int = 1
@@ -20,6 +21,8 @@ func _get_info() -> Dictionary:
 		"health": health,
 		"agua": agua,
 		"cell":cell,
+		"total_gro":total_gro,
+		"max_total_gro":max_total_gro,
 		"position":position,
 		"entity_type": EntityTypes.type_to_string(entity_type)
 	}

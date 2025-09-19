@@ -1,36 +1,36 @@
-extends "res://scripts/entities/animals/animal.gd"
-
-# Rat - Herbivorous animal that eats plants
-
-
-func _ready() -> void:
-	super()
-	max_health = 10
-	health = 10
-	hunger_threshold = 90  # Rats eat when less than 50% hungry
-	entity_type = EntityTypes.EntityType.RAT
-	speed = 220
-	
-	
-	AnimalManager._register(self)
-
-func _find_food():
-	return PlantManager._get_closest_crop(position)
-
-func _consume_food(food) -> bool:
-	PlantManager._consume_plant(food)
-	food.health -= 1
-	return food.health > 0
-
-# Serialization methods (inherits from animal.gd which handles most of it)
-func serialize() -> Dictionary:
-	var data: Dictionary = super.serialize()
-	# Rat-specific data (if any) would go here
-	return data
-
-func deserialize(data: Dictionary) -> void:
-	super.deserialize(data)
-	# Rat-specific deserialization (if any) would go here
-	
-	# Re-register with managers after deserialization
-	AnimalManager._register(self)
+#extends "res://scripts/entities/animals/animal.gd"
+#
+## Rat - Herbivorous animal that eats plants
+#
+#
+#func _ready() -> void:
+	#super()
+	#max_health = 10
+	#health = 10
+	#hunger_threshold = 90  # Rats eat when less than 50% hungry
+	#entity_type = EntityTypes.EntityType.RAT
+	#speed = 220
+	#
+	#
+	#AnimalManager._register(self)
+#
+#func _find_food():
+	#return PlantManager._get_closest_crop(position)
+#
+#func _consume_food(food) -> bool:
+	#PlantManager._consume_plant(food)
+	#food.health -= 1
+	#return food.health > 0
+#
+## Serialization methods (inherits from animal.gd which handles most of it)
+#func serialize() -> Dictionary:
+	#var data: Dictionary = super.serialize()
+	## Rat-specific data (if any) would go here
+	#return data
+#
+#func deserialize(data: Dictionary) -> void:
+	#super.deserialize(data)
+	## Rat-specific deserialization (if any) would go here
+	#
+	## Re-register with managers after deserialization
+	#AnimalManager._register(self)

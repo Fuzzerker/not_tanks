@@ -5,6 +5,7 @@ const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 var _plants: Array[Plant] = []
 
 func _ready() -> void:
+	TimeManager._register(_process_tick)
 	randomize()
 
 func _get_closest_plant(pos: Vector2) -> Plant:
@@ -15,7 +16,9 @@ func _get_closest_crop(pos: Vector2) -> Plant:
 	return SpatialUtils.find_closest_by_type(_plants, pos, EntityTypes.EntityType.CROP) as Plant
 
 func _process_tick() -> void:
+
 	_gro_all()
+	
 		
 
 func _register(plant: Plant) -> void:
@@ -53,6 +56,8 @@ func _consume_plant(plant):
 	_update_plant_sprite(plant)
 
 func _gro_all() -> void:
+	
+	
 	for plant in _plants:
 		# Handle arbols differently from crops
 		if plant.entity_type == EntityTypes.EntityType.ARBOL:
@@ -81,27 +86,7 @@ func _grow_arbol(arbol: Plant) -> void:
 
 func _grow_crop(plant: Plant) -> void:
 	# Check if crop is ready for harvest (at full growth)
-	if plant.total_gro >= plant.max_total_gro:
-		var req := WorkRequest.new()
-		req.type = "harvest"
-		req.cell = plant.cell
-		req.position = plant.position
-		req.effort = 100
-		
-		# Store command data for serialization
-		req.command_data = {
-			"plant_id": plant.get_instance_id()
-		}
-		
-		req.on_complete = func():
-			Resources.food += int(plant.health / 10)
-			Resources.seeds += randi_range(1, 3)
-			plant.marker.queue_free()
-			plant.queue_free()
-			_plants.erase(plant)
-		WorkQueue._add_work(req)
-		return
-
+	
 	# If crop has water, grow it
 	if plant.agua > 0:
 		plant.total_gro += 1
@@ -113,23 +98,39 @@ func _grow_crop(plant: Plant) -> void:
 				plant.health = plant.max_health
 			# Update sprite based on new health
 			_update_plant_sprite(plant)
-	else:
+	else: if not plant.agua_request_generated:
 		# Request water if crop has none
+		plant.agua_request_generated = true
 		var req := WorkRequest.new()
 		req.type = "agua"
 		req.cell = plant.cell
 		req.position = plant.position
 		req.effort = 600
+		var terrain_gen = WorkCallbackFactory._get_terrain_gen()
+		req.marker = terrain_gen._make_icon(terrain_gen.agua_icon,plant.cell)
 		
 		# Store command data for serialization
 		req.command_data = {
 			"plant_id": plant.get_instance_id()
 		}
 		
-		req.on_complete = func():
-			if plant != null:
-				plant.agua = 6
 		WorkQueue._add_work(req)
+		
+	if plant.total_gro >= plant.max_total_gro:
+		var req := WorkRequest.new()
+		req.type = "harvest"
+		req.cell = plant.cell
+		req.position = plant.position
+		req.effort = 100
+		req.on_complete = func():
+			Resources.food += int(plant.health / 10)
+			Resources.seeds += randi_range(1, 3)
+			plant.marker.queue_free()
+			plant.queue_free()
+			_plants.erase(plant)
+		WorkQueue._add_work(req)
+		return
+
 
 
 # Helper method for save system to get all plants

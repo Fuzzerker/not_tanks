@@ -10,6 +10,7 @@ const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 @export var occupied_cells: Array[Vector2i] = []
 @export var entity_type: EntityTypes.EntityType
 var marker: Sprite2D
+var assigned_to = ""
 
 # Serialization methods
 func serialize() -> Dictionary:

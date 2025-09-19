@@ -20,6 +20,19 @@ var building_configs = {
 	}
 }
 
+func _get_assigned_house(character_name) -> Building:
+	for bld in buildings:
+		if bld.entity_type == EntityTypes.EntityType.HOUSE:
+			if bld.construction_complete and bld.assigned_to == character_name:
+				return bld
+				
+	for bld in buildings:
+		if bld.entity_type == EntityTypes.EntityType.HOUSE:
+			if bld.construction_complete and  bld.assigned_to == "":
+				bld.assigned_to = character_name
+				return bld 
+	return null
+
 func _register_building(building: Building) -> void:
 	buildings.append(building)
 	InformationRegistry._register(building)

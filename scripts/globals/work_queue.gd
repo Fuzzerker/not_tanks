@@ -20,6 +20,15 @@ func _has_chop_work_for_arbol(arbol_id: int) -> bool:
 				return true
 	return false 
 
+func _abandon_work(cell):
+	for request: WorkRequest in work_requests:
+		if request.cell == cell:
+			request.status = "pending"
+	
+func _complete_work(request):
+	print("completing request")
+	work_requests.erase(request)
+
 func _do_work(cell: Vector2i, effort: int) -> bool:
 	for request: WorkRequest in work_requests:
 		if request.cell == cell:
@@ -67,20 +76,60 @@ func _get_terrain_gen():
 func _add_work(request: WorkRequest) -> void:
 	for rq: WorkRequest in work_requests:
 		if rq.cell == request.cell:
+			#print("request rejected.  Request at cell already ", rq.type)
 			return
+	#print("adding request ", request.type)
 	work_requests.push_back(request)
-
-func _claim_work(position: Vector2, character_type: EntityTypes.EntityType = EntityTypes.EntityType.WORKER) -> WorkRequest:
+	
+	
+func _claim_work_not_of_types(position: Vector2, character_type: EntityTypes.EntityType, work_types: Array[String] ) -> WorkRequest:
+	
 	var closest_node = SpatialUtils.find_closest_entity(
 		work_requests, 
 		position, 
 		func(request): 
+			#print("status ", request.status, " can do ", JobCapabilities.can_do_work(character_type, request.type), " ch type ", character_type, " rq type ", request.type)
+			return request.status == "pending" and not work_types.has(request.type) and JobCapabilities.can_do_work(character_type, request.type)
+	)
+	var closest_request = closest_node as WorkRequest
+	
+	if closest_request:
+		closest_request.status = "assigned"
+		#print("assigning work_type ", work_type, "work_requests ", work_requests.size())
+	return closest_request	
+	
+	
+func _claim_work_of_type(position: Vector2,  work_type: String ) -> WorkRequest:
+	
+	var closest_node = SpatialUtils.find_closest_entity(
+		work_requests, 
+		position, 
+		func(request): 
+			#print("status ", request.status, " can do ", JobCapabilities.can_do_work(character_type, request.type), " ch type ", character_type, " rq type ", request.type)
+			return request.status == "pending" and request.type == work_type
+	)
+	var closest_request = closest_node as WorkRequest
+	
+	if closest_request:
+		closest_request.status = "assigned"
+		print("assigning work_type ", work_type, "work_requests ", work_requests.size())
+	return closest_request	
+
+
+func _claim_work(position: Vector2, character_type: EntityTypes.EntityType = EntityTypes.EntityType.WORKER) -> WorkRequest:
+	#print("_claim_work ",character_type )
+	var closest_node = SpatialUtils.find_closest_entity(
+		work_requests, 
+		position, 
+		func(request): 
+			#print("status ", request.status, " can do ", JobCapabilities.can_do_work(character_type, request.type), " ch type ", character_type, " rq type ", request.type)
 			return request.status == "pending" and JobCapabilities.can_do_work(character_type, request.type)
 	)
 	var closest_request = closest_node as WorkRequest
 	
 	if closest_request:
 		closest_request.status = "assigned"
+		print("assigning work to character_type ", character_type, "work_requests ", work_requests.size(), " closest_request ", closest_request.type)
 	return closest_request
 
 # Claim work of a specific type

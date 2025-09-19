@@ -5,89 +5,87 @@ extends Node
 
 class_name WorkCallbackFactory
 
+
+
 # Create a callback for the given work request type and command data
-static func create_callback(type: String, cell: Vector2i, command_data: Dictionary) -> Callable:
+static func create_callback(type: String, cell: Vector2i, marker: Sprite2D) -> Callable:
 	match type:
 		"dig":
-			return _create_dig_callback(cell, command_data)
+			return _create_dig_callback(cell, marker)
 		"crop":
-			return _create_plant_callback(cell, command_data)
+			return _create_plant_callback(cell, marker)
 		"harvest":
-			return _create_harvest_callback(command_data)
+			return _create_harvest_callback(cell)
 		"agua":
-			return _create_agua_callback(command_data)
-		"chop":
-			return _create_chop_callback(command_data)
+			return _create_agua_callback(cell, marker)
+		#"chop":
+			#return _create_chop_callback(command_data)
 		"collect_agua":
-			return _create_collect_agua_callback(command_data)
+			return _create_collect_agua_callback(cell)
 		"construction":
-			return _create_construction_callback(command_data)
+			return _create_construction_callback(cell, marker)
 		_:
 			push_warning("Unknown work type: " + type)
 			return Callable()
 
 # Create dig callback from command data
-static func _create_dig_callback(cell: Vector2i, command_data: Dictionary) -> Callable:
+static func _create_dig_callback(cell: Vector2i, marker: Sprite2D) -> Callable:
 	var terrain_gen = _get_terrain_gen()
-	if terrain_gen != null:
-		return func():
-			terrain_gen.set_cell(cell, 0, Vector2i(13, 2))  # water_atlas
-			if command_data.has("marker_path"):
-				var marker = terrain_gen.get_node_or_null(command_data.marker_path)
-				if marker:
-					marker.queue_free()
-			Resources.agua += 1
-	else:
-		return Callable()
+	return func():
+		terrain_gen.set_cell(cell, 0, Vector2i(13, 2))  # water_atlas
+		marker.queue_free()
+		var req := WorkRequest.new()
+		req.type = "collect_agua"
+		req.cell = cell
+		req.position = marker.position
+		req.effort = 100
+
+		WorkQueue._add_work(req)
+
 
 # Create plant callback from command data  
-static func _create_plant_callback(cell: Vector2i, command_data: Dictionary) -> Callable:
+static func _create_plant_callback(cell: Vector2i, marker: Sprite2D) -> Callable:
 	var terrain_gen = _get_terrain_gen()
 	if terrain_gen != null:
 		return func():
-			if command_data.has("marker_path"):
-				var marker = terrain_gen.get_node_or_null(command_data.marker_path)
-				if marker:
-					# Change marker sprite
-					var old_atlas: AtlasTexture = marker.texture
-					var new_atlas := AtlasTexture.new()
-					new_atlas.atlas = preload("res://sprites/Seedling.png")
-					new_atlas.region = Rect2(Vector2(13 * 16, 16), old_atlas.region.size)
-					marker.texture = new_atlas
-					
-					# Create plant
-					var plant := Plant.new()
-					plant.marker = marker
-					plant.cell = cell
-					plant.position = marker.position
-					PlantManager._register(plant)
+			var old_atlas: AtlasTexture = marker.texture
+			var new_atlas := AtlasTexture.new()
+			new_atlas.atlas = preload("res://sprites/Seedling.png")
+			new_atlas.region = Rect2(Vector2(13 * 16, 16), old_atlas.region.size)
+			marker.texture = new_atlas
+			
+			# Create plant
+			var plant := Plant.new()
+			plant.marker = marker
+			plant.cell = cell
+			plant.position = marker.position
+			PlantManager._register(plant)
 	else:
 		return Callable()
 
 # Create harvest callback from command data
-static func _create_harvest_callback(command_data: Dictionary) -> Callable:
+static func _create_harvest_callback(cell) -> Callable:
 	return func():
 		Resources.food += 1
 		Resources.seeds += randi_range(1, 3)
-		if command_data.has("plant_id"):
-			# Find and remove the plant
-			for plant in PlantManager._plants:
-				if plant.get_instance_id() == command_data.plant_id:
-					if plant.marker:
-						plant.marker.queue_free()
-					plant.queue_free()
-					PlantManager._plants.erase(plant)
-					break
+		for plant in PlantManager._plants:
+			if plant.cell == cell:
+				if plant.marker:
+					plant.marker.queue_free()
+				plant.queue_free()
+				PlantManager._plants.erase(plant)
+				break
 
 # Create agua callback from command data
-static func _create_agua_callback(command_data: Dictionary) -> Callable:
+static func _create_agua_callback(cell, marker) -> Callable:
 	return func():
-		if command_data.has("plant_id"):
-			# Find and water the plant
-			for plant in PlantManager._plants:
-				if plant.get_instance_id() == command_data.plant_id:
-					plant.agua = 6
-					break
+		for plant in PlantManager._plants:
+			if plant.cell == cell:
+				marker.queue_free()
+				plant.agua = 6
+				plant.agua_request_generated = false
+				break
+				
 		# Note: The farmer's agua inventory is handled in the farmer's _do_work() override
 
 # Create chop callback from command data
@@ -130,6 +128,7 @@ static func _create_chop_callback(command_data: Dictionary) -> Callable:
 						req.position = plant.position
 						req.effort = 100
 						
+						
 						req.command_data = {
 							"marker_path": command_data.marker_path,
 							"arbol_id": plant.get_instance_id()
@@ -140,32 +139,32 @@ static func _create_chop_callback(command_data: Dictionary) -> Callable:
 					break
 
 # Create collect_agua callback from command data
-static func _create_collect_agua_callback(command_data: Dictionary) -> Callable:
+static func _create_collect_agua_callback(cell) -> Callable:
 	return func():
-		if command_data.has("agua_tile"):
-			var agua_tile = Vector2i(command_data.agua_tile.x, command_data.agua_tile.y)
-			var terrain_gen = _get_terrain_gen()
-			if terrain_gen != null:
-				# Remove agua from global resources and revert tile to dirt
-				if Resources.agua > 0:
-					Resources.agua -= 1
-				terrain_gen.set_cell(agua_tile, 0, terrain_gen.dirt_atlas)
-				terrain_gen.agua_tiles.erase(agua_tile)
+		var terrain_gen = _get_terrain_gen()
+		if terrain_gen != null:
+			# Remove agua from global resources and revert tile to dirt
+			if Resources.agua > 0:
+				Resources.agua -= 1
+			terrain_gen.set_cell(cell, 0, terrain_gen.dirt_atlas)
+			terrain_gen.agua_tiles.erase(cell)
+			
 				
 				# Give agua to the farmer who completed this work
 				# Note: We need to find the farmer and give them the agua
 				# This will be handled by the farmer's work completion logic
 
 # Create construction callback from command data
-static func _create_construction_callback(command_data: Dictionary) -> Callable:
+static func _create_construction_callback(cell, marker) -> Callable:
 	return func():
-		if command_data.has("building_id"):
+		
 			# Find the building and handle construction completion
-			for building in BuildingManager.buildings:
-				if building.get_instance_id() == command_data.building_id:
-					# Call the building manager's completion function
-					BuildingManager._complete_construction_work(building, Vector2i.ZERO)
-					break
+		for building in BuildingManager.buildings:
+			if building.occupied_cells.has(cell):
+				# Call the building manager's completion function
+				BuildingManager._complete_construction_work(building, cell)
+				marker.queue_free()
+				break
 
 # Helper to get terrain generator - shared logic between both systems
 static func _get_terrain_gen():
@@ -183,6 +182,6 @@ static func _get_terrain_gen():
 			terrain_gen = game_scene
 		else:
 			# Try to find TileMapLayer child
-			terrain_gen = game_scene.get_node("TileMapLayer") if game_scene != null else null
+			terrain_gen = game_scene.get_node("TileMapLayer") as TerrainGen if game_scene != null else null
 	
 	return terrain_gen

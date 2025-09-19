@@ -1,59 +1,52 @@
 extends "res://scripts/entities/characters/working_character.gd"
 
-# Farmer - Human character specialized in planting and watering
-# Inherits all common working character functionality from WorkingCharacter
+class_name Farmer
 
-var carried_agua: int = 0  # Amount of agua the farmer is carrying
+var carried_agua: int = 0
+var max_agua: int = 3
 
 func _ready():
-	base_speed = 10000
 	super()
 	
-func _find_work() -> void:
-	# Simplified farmer job logic:
-	# 1. Always do agua work if I have agua
-	# 2. Do not claim new agua work if out of agua  
-	# 3. If I do not have work and am out of agua, claim a collect_agua job
 	
-	if carried_agua > 0:
-		# Has agua - look for plants to water
-		active_work = WorkQueue._claim_specific_work(position, "agua", EntityTypes.EntityType.FARMER)
-	
-	if active_work == null and carried_agua == 0:
-		# No agua - look for agua to collect first
-		active_work = WorkQueue._claim_specific_work(position, "collect_agua", EntityTypes.EntityType.FARMER)
-	
-	if active_work == null:
-		# Look for any other farmer work (planting, etc.)
-		active_work = WorkQueue._claim_work(position, EntityTypes.EntityType.FARMER)
+func _on_work_state_exit():
+	print("_on_work_state_exit ", last_work.type)
+	if last_work != null and last_work.type == "agua":
+		carried_agua -= 1
+	if last_work != null and last_work.type == "collect_agua":
+		carried_agua += 1
 		
-		# If we found agua work but have no agua, skip it and look for collect_agua instead
-		if active_work != null and active_work.type == "agua" and carried_agua <= 0:
-			# Release the agua work and look for collect_agua work
-			active_work.status = "pending"  # Release it back
-			active_work = WorkQueue._claim_specific_work(position, "collect_agua", EntityTypes.EntityType.FARMER)
+func _setup_character_type() -> void:
+	entity_type = EntityTypes.EntityType.FARMER
+
+
+func _try_find_work() -> WorkRequest:
+	var request: WorkRequest
+	if active_work != null:
+		return null
+	if carried_agua == max_agua:
+		request = WorkQueue._claim_work_of_type(position, "agua")
+		if request == null:
+			WorkQueue._claim_work_not_of_types(position, entity_type, ["collect_agua"])
+	else:
+		if carried_agua == 0:
+			request = WorkQueue._claim_work_not_of_types(position, entity_type, ["agua"])
+		else:
+			request = WorkQueue._claim_work(position, entity_type)
+	return request
 	
-	if active_work:
-		_set_action(Action.WORK, "found work: " + active_work.type)
-		target_position = active_work.position
 
-# Override work completion to handle agua collection
-
-
-# Override info display to show agua inventory
 func _get_info() -> Dictionary:
 	var info: Dictionary = super()
 	info["carried_agua"] = carried_agua
 	return info
 
-# Override serialization to include agua inventory
 func serialize() -> Dictionary:
 	var data: Dictionary = super.serialize()
 	data["carried_agua"] = carried_agua
 	return data
 
-# Override deserialization to include agua inventory
 func deserialize(data: Dictionary) -> void:
-	super.deserialize(data)
+	#super.deserialize(data)
 	if data.has("carried_agua"):
 		carried_agua = data.carried_agua

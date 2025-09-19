@@ -11,6 +11,7 @@ const WorkCallbackFactory = preload("res://scripts/globals/work_callback_factory
 @export var status: String = "pending"
 @export var effort: int = 100
 var on_complete: Callable = Callable()
+var marker = null
 
 # Command data for serialization (replaces callbacks)
 @export var command_data: Dictionary = {}
@@ -41,9 +42,3 @@ func deserialize(data: Dictionary) -> void:
 	if data.has("command_data"):
 		command_data = data.command_data
 	
-	# Reconstruct the callback based on command data
-	_reconstruct_callback()
-
-# Reconstruct callback from command data using the shared factory
-func _reconstruct_callback() -> void:
-	on_complete = WorkCallbackFactory.create_callback(type, cell, command_data)

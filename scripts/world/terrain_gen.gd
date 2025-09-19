@@ -1,5 +1,5 @@
 extends TileMapLayer
-
+class_name TerrainGen
 # Import required classes
 const ArbolClass = preload("res://scripts/resources/tree.gd")
 const Building = preload("res://scripts/resources/building.gd")
@@ -33,6 +33,8 @@ var dig_icon = preload("res://preloads/dig_icon.tscn")
 var plant_icon = preload("res://preloads/plant_icon.tscn")
 var tree_icon = preload("res://preloads/tree_icon.tscn")
 var chop_icon = preload("res://preloads/chop_icon.tscn")
+var agua_icon = preload("res://preloads/agua_icon.tscn")
+
 var construction_icon = preload("res://preloads/construction_icon.tscn")
 
 var bcl: Sprite2D = null
@@ -74,6 +76,11 @@ func _on_load_game_from_menu(save_name: String) -> void:
 	else:
 		push_error("Could not find main scene manager to handle load game request")
 
+func _complete_work(request: WorkRequest):
+	print("completing ", request.type)
+	WorkQueue._complete_work(request)
+	WorkCallbackFactory.create_callback(request.type, request.cell, request.marker).call()
+
 
 func _on_dig_pressed() -> void: 
 	_cancel_action()
@@ -100,14 +107,13 @@ func _set_terrain() -> void:
 
 # --- WORK HELPERS ------------------------------------------------------------
 
-func _make_request(work_type: String, clicked_cell: Vector2i, marker: Sprite2D, on_complete: Callable) -> WorkRequest:
+func _make_request(work_type: String, clicked_cell: Vector2i, marker: Sprite2D) -> WorkRequest:
 	var req := WorkRequest.new()
 	req.type = work_type
 	req.cell = clicked_cell
 	req.position = marker.position
 	req.effort = 100
-	req.on_complete = on_complete
-	
+	req.marker = marker
 	# Store command data for serialization
 	req.command_data = {
 		"marker_path": marker.get_path()
@@ -124,48 +130,6 @@ func _make_icon(scene: PackedScene, pos) -> Sprite2D:
 
 # --- ON COMPLETE BUILDERS ----------------------------------------------------
 
-func _build_dig_on_completed(clicked_cell: Vector2i, marker: Sprite2D) -> Callable:
-	return func():
-		set_cell(clicked_cell, terrain_source, water_atlas)
-		marker.queue_free()
-		Resources.agua += 1
-		# Add this tile to agua collection sites
-		agua_tiles.append(clicked_cell)
-		
-		# Create collect_agua work immediately
-		var collect_req := WorkRequest.new()
-		collect_req.type = "collect_agua"
-		collect_req.cell = clicked_cell
-		collect_req.position = map_to_local(clicked_cell)
-		collect_req.effort = 10
-		
-		collect_req.command_data = {
-			"agua_tile": {"x": clicked_cell.x, "y": clicked_cell.y}
-		}
-		
-		collect_req.on_complete = func():
-			# Remove agua from global resources and revert tile
-			if Resources.agua > 0:
-				Resources.agua -= 1
-			set_cell(clicked_cell, terrain_source, dirt_atlas)
-			agua_tiles.erase(clicked_cell)
-		
-		WorkQueue._add_work(collect_req)
-
-func _build_plant_on_completed(clicked_cell: Vector2i, marker: Sprite2D) -> Callable:
-	return func():
-		var old_atlas: AtlasTexture = marker.texture
-		var new_atlas := AtlasTexture.new()
-		new_atlas.atlas = preload("res://sprites/Seedling.png")
-		new_atlas.region = Rect2(Vector2(13 * 16, 16), old_atlas.region.size)
-		marker.texture = new_atlas
-
-		var plant := Plant.new()
-		plant.marker = marker
-		plant.cell = clicked_cell
-		plant.position = marker.position
-		PlantManager._register(plant)
-
 
 
 # --- TILE ACTIONS -------------------------------------_-----------------------
@@ -173,12 +137,12 @@ func _build_plant_on_completed(clicked_cell: Vector2i, marker: Sprite2D) -> Call
 func _create_work_request(clicked_cell: Vector2i, marker: Sprite2D) -> void:
 	match PlayerActions.current_action:
 		"dig":
-			WorkQueue._add_work(_make_request("dig", clicked_cell, marker, _build_dig_on_completed(clicked_cell, marker)))
+			WorkQueue._add_work(_make_request("dig", clicked_cell, marker))
 		"crop":
 			if Resources.seeds <= 0:
 				return
 			Resources.seeds -= 1
-			WorkQueue._add_work(_make_request("crop", clicked_cell, marker, _build_plant_on_completed(clicked_cell, marker)))
+			WorkQueue._add_work(_make_request("crop", clicked_cell, marker))
 
 func _create_work_icon(cell_pos) -> Sprite2D:
 	match PlayerActions.current_action:
@@ -288,6 +252,7 @@ func _build_chop_on_completed(arbol: Plant, marker: Sprite2D) -> Callable:
 			new_req.cell = arbol.cell
 			new_req.position = marker.position
 			new_req.effort = 100
+			new_req.marker = marker
 			
 			new_req.command_data = {
 				"marker_path": marker.get_path(),
@@ -552,15 +517,7 @@ func _create_building_construction_work(building: Building) -> void:
 		
 		# Create construction icon
 		var icon = _create_construction_icon(cell)
-		if icon != null:
-			req.command_data["marker_path"] = str(icon.get_path())
-		
-		req.on_complete = func():
-			# Destroy the construction icon
-			if icon != null and is_instance_valid(icon):
-				icon.queue_free()
-			BuildingManager._complete_construction_work(building, cell)
-		
+		req.marker = icon
 		WorkQueue._add_work(req)
 
 # Create construction icon for a cell

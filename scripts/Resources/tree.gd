@@ -18,6 +18,7 @@ func _init():
 	agua = 0  # Arbols don't need water
 	max_total_gro = 200
 	total_gro = 1
+	PlantManager._register(self)
 
 # Override to provide arbol-specific info
 func _get_info() -> Dictionary:
