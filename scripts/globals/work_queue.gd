@@ -18,7 +18,7 @@ func _has_work(cell: Vector2i) -> bool:
 # Check if there's already a chop job for a specific arbol
 func _has_chop_work_for_arbol(arbol_id: int) -> bool:
 	for request: WorkRequest in work_requests:
-		if request.type == "chop" and request.command_data.has("arbol_id"):
+		if request.type == "chop":
 			if request.command_data.arbol_id == arbol_id:
 				return true
 	return false 
@@ -32,16 +32,7 @@ func _complete_work(request):
 	print("completing request")
 	work_requests.erase(request)
 
-func _do_work(cell: Vector2i, effort: int) -> bool:
-	for request: WorkRequest in work_requests:
-		if request.cell == cell:
-			request.effort -= effort
-			if request.effort <= 0 and request.on_complete.is_valid():
-				work_requests.erase(request)
-				request.on_complete.call()
-				return true
-			return false		
-	return true
+
 	
 func _destroy_work(pos: Vector2) -> void:
 	for rq: WorkRequest in work_requests:
@@ -51,23 +42,23 @@ func _destroy_work(pos: Vector2) -> void:
 			return
 
 # Remove all chop jobs for a specific arbol (when arbol is destroyed)
-func _destroy_chop_work_for_arbol(arbol_id: int) -> void:
-	var requests_to_remove: Array[WorkRequest] = []
-	for request: WorkRequest in work_requests:
-		if request.type == "chop" and request.command_data.has("arbol_id"):
-			if request.command_data.arbol_id == arbol_id:
-				requests_to_remove.append(request)
-	
-	# Remove all matching requests and clean up their markers
-	for request in requests_to_remove:
-		work_requests.erase(request)
-		# Clean up any markers (though they should already be cleaned up by the callback)
-		if request.command_data.has("marker_path"):
-			var terrain_gen = _get_terrain_gen()
-			if terrain_gen:
-				var marker = terrain_gen.get_node_or_null(request.command_data.marker_path)
-				if marker:
-					marker.queue_free()
+#func _destroy_chop_work_for_arbol(arbol_id: int) -> void:
+	#var requests_to_remove: Array[WorkRequest] = []
+	#for request: WorkRequest in work_requests:
+		#if request.type == "chop" and request.command_data.has("arbol_id"):
+			#if request.command_data.arbol_id == arbol_id:
+				#requests_to_remove.append(request)
+	#
+	## Remove all matching requests and clean up their markers
+	#for request in requests_to_remove:
+		#work_requests.erase(request)
+		## Clean up any markers (though they should already be cleaned up by the callback)
+		#if request.command_data.has("marker_path"):
+			#var terrain_gen = _get_terrain_gen()
+			#if terrain_gen:
+				#var marker = terrain_gen.get_node_or_null(request.command_data.marker_path)
+				#if marker:
+					#marker.queue_free()
 
 # Helper to get terrain generator
 func _get_terrain_gen():
@@ -148,32 +139,3 @@ func _claim_specific_work(position: Vector2, work_type: String, character_type: 
 	if closest_request:
 		closest_request.status = "assigned"
 	return closest_request
-
-# Serialize work queue data for saving
-func serialize() -> Dictionary:
-	var serialized_requests: Array = []
-	for request: WorkRequest in work_requests:
-		if request.has_method("serialize"):
-			serialized_requests.append(request.serialize())
-	
-	return {
-		"type": "work_queue",
-		"work_requests": serialized_requests
-	}
-
-# Deserialize work queue data when loading
-func deserialize(data: Dictionary) -> void:
-	# Clear existing work requests
-	work_requests.clear()
-	
-	# Restore work requests
-	if data.has("work_requests"):
-		for request_data: Dictionary in data.work_requests:
-			var request: WorkRequest = WorkRequest.new()
-			request.deserialize(request_data)
-			work_requests.append(request)
-	
-
-# Helper method for save system to clear all work requests
-func _clear_all_work() -> void:
-	work_requests.clear()

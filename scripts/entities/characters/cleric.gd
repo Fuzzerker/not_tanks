@@ -1,8 +1,6 @@
 extends "res://scripts/entities/characters/working_character.gd"
 
 func _ready():
-	max_stamina = 100
-	stamina = 100
 	super()
 
 func _setup_character_type() -> void:

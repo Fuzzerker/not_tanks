@@ -68,7 +68,7 @@ func _do_work():
 		print("break")
 	#print(character.active_work.effort, " effort ", character.effort, " stam ", character.stamina)
 	if character.active_work.effort <= 0:
-		character.terrain_gen._complete_work(character.active_work)
+		WorkCallbackFactory._get_terrain_gen()._complete_work(character.active_work)
 		character.last_work = character.active_work
 		character.active_work = null
 		print(character.last_work, character.active_work )

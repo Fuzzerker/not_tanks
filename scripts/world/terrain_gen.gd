@@ -1,8 +1,6 @@
 extends TileMapLayer
 class_name TerrainGen
 # Import required classes
-const ArbolClass = preload("res://scripts/resources/tree.gd")
-const Building = preload("res://scripts/resources/building.gd")
 var EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
 # Track dug tiles that have agua available for collection
@@ -107,25 +105,6 @@ func _set_terrain() -> void:
 
 # --- WORK HELPERS ------------------------------------------------------------
 
-func _make_request(work_type: String, clicked_cell: Vector2i, marker: Sprite2D) -> WorkRequest:
-	var req := WorkRequest.new()
-	req.type = work_type
-	req.cell = clicked_cell
-	req.position = marker.position
-	req.effort = 100
-	req.marker = marker
-	# Store command data for serialization
-	req.command_data = {
-		"marker_path": marker.get_path()
-	}
-	
-	return req
-
-func _make_icon(scene: PackedScene, pos) -> Sprite2D:
-	var inst: Sprite2D = scene.instantiate()
-	add_child(inst)
-	inst.position = map_to_local(pos)
-	return inst
 
 
 # --- ON COMPLETE BUILDERS ----------------------------------------------------
@@ -134,33 +113,7 @@ func _make_icon(scene: PackedScene, pos) -> Sprite2D:
 
 # --- TILE ACTIONS -------------------------------------_-----------------------
 
-func _create_work_request(clicked_cell: Vector2i, marker: Sprite2D) -> void:
-	match PlayerActions.current_action:
-		"dig":
-			WorkQueue._add_work(_make_request("dig", clicked_cell, marker))
-		"crop":
-			if Resources.seeds <= 0:
-				return
-			Resources.seeds -= 1
-			WorkQueue._add_work(_make_request("crop", clicked_cell, marker))
-		"chop":
-			WorkQueue._add_work(_make_request("chop", clicked_cell, marker))
-		
-
-func _create_work_icon(cell_pos) -> Sprite2D:
-	match PlayerActions.current_action:
-		"dig":
-			return _make_icon(dig_icon, cell_pos)
-		"crop":
-			if Resources.seeds > 0:
-				return _make_icon(plant_icon, cell_pos)
-		"chop":
-			return _make_icon(chop_icon, cell_pos)
-		"construction":
-			return _make_icon(construction_icon, cell_pos)
-	return null
-
-func _set_tile_action(clicked_cell: Vector2i) -> void:
+func _set_tile_action(clicked_cell: Vector2i, marker_path: String) -> void:
 	# Set tile action in a 3x3 radius around the clicked cell
 	
 			
@@ -168,10 +121,7 @@ func _set_tile_action(clicked_cell: Vector2i) -> void:
 	if WorkQueue._has_work(clicked_cell):
 		return
 	
-	# Create marker and work request for this cell
-	var marker = _create_work_icon(clicked_cell)
-	if marker:
-		_create_work_request(clicked_cell, marker)
+	WorkRequest.new(PlayerActions.current_action, clicked_cell, map_to_local(clicked_cell) , marker_path )
 			
 
 func _set_chop_action(clicked_cell: Vector2i) -> void:
@@ -188,12 +138,10 @@ func _set_chop_action(clicked_cell: Vector2i) -> void:
 	if WorkQueue._has_work(arbol_cell):
 		return
 	
-	# Create chop icon on top of the arbol
-	var marker = _make_icon(chop_icon, arbol_cell)
-	if marker:
-		# Make sure the chop icon appears on top of the arbol
-		marker.z_index = 1
-		_create_work_request(arbol_cell, marker)
+	WorkRequest.new("chop", arbol_cell, map_to_local(arbol_cell), "res://preloads/chop_icon/tscn" )
+	
+	
+	
 
 func _find_arbol_at_position(world_pos: Vector2) -> Plant:
 	# Use PlantManager to find arbol at this position
@@ -204,48 +152,6 @@ func _find_arbol_at_position(world_pos: Vector2) -> Plant:
 		if distance < 32:  # Within one tile
 			return closest_plant
 	return null
-
-
-func _build_chop_on_completed(arbol: Plant, marker: Sprite2D) -> Callable:
-	return func():
-		# Damage the arbol
-		arbol.health -= 25  # Each chop does 25 damage
-		
-		# Update arbol scale to show shrinking
-		if arbol.has_method("update_scale"):
-			arbol.update_scale()
-		
-		if arbol.health <= 0:
-			# Tree is fully chopped - give logs and remove tree
-			Resources.logs += arbol.total_gro
-			
-			# Clean up the chop marker
-			marker.queue_free()
-			
-			# Clean up any remaining chop jobs for this arbol
-			WorkQueue._destroy_chop_work_for_arbol(arbol.get_instance_id())
-			
-			# Remove the arbol
-			PlantManager._plants.erase(arbol)
-			if arbol.marker:
-				arbol.marker.queue_free()
-			arbol.queue_free()
-		else:
-			# Tree still has health - create another chop request
-			var new_req := WorkRequest.new()
-			new_req.type = "chop"
-			new_req.cell = arbol.cell
-			new_req.position = marker.position
-			new_req.effort = 100
-			new_req.marker = marker
-			
-			new_req.command_data = {
-				"marker_path": marker.get_path(),
-				"arbol_id": arbol.get_instance_id()
-			}
-			
-			new_req.on_complete = _build_chop_on_completed(arbol, marker)
-			WorkQueue._add_work(new_req)
 
 
 # --- CLERIC ------------------------------------------------------------------
@@ -314,34 +220,7 @@ func _place_fox() -> void:
 	add_child(fox_instance)
 
 func _place_arbol() -> void:
-	# Create arbol icon/marker at the clicked position
-	var clicked_cell = local_to_map(get_local_mouse_position())
-	var marker_instance = tree_icon.instantiate()
-	marker_instance.position = map_to_local(clicked_cell)
-	add_child(marker_instance)
-	
-	# Change marker texture to use misc_tiles.png at atlas coords 1,1
-	var new_atlas := AtlasTexture.new()
-	new_atlas.atlas = preload("res://sprites/misc_tiles.png")
-	var atlas_loc = Vector2(3, 24)
-	var rect_size = Vector2(1,2)
-	
-	new_atlas.region = Rect2(atlas_loc * 32, rect_size * 32)
-	marker_instance.texture = new_atlas
-	
-	# Create and register the arbol immediately
-	var arbol := ArbolClass.new()
-	arbol.marker = marker_instance
-	arbol.cell = clicked_cell
-	arbol.position = marker_instance.position
-	
-	# Set initial scale and position properly
-	arbol.update_scale()
-	
-	PlantManager._register(arbol)
-	
-	# Clear the action
-	PlayerActions.current_action = ""
+	print("nah")
 
 # --- BUILDING PLACEMENT ------------------------------------------------------
 
@@ -488,22 +367,7 @@ func _create_building_construction_work(building: Building) -> void:
 		if WorkQueue._has_work(cell):
 			continue
 			
-		var req := WorkRequest.new()
-		req.type = "construction"
-		req.cell = cell
-		req.position = map_to_local(cell)
-		req.effort = config.construction_effort
-		
-		# Store command data for serialization
-		req.command_data = {
-			"building_id": building.get_instance_id(),
-			"building_type": building.building_type
-		}
-		
-		# Create construction icon
-		var icon = _create_construction_icon(cell)
-		req.marker = icon
-		WorkQueue._add_work(req)
+		WorkRequest.new("construction", cell, map_to_local(cell), "res://preloads/construction_icon.tscn", config.construction_effort )
 
 # Create construction icon for a cell
 func _create_construction_icon(cell: Vector2i) -> Sprite2D:
@@ -519,8 +383,10 @@ var clicked = false
 func _tilemap_click() -> void:
 	var clicked_cell = local_to_map(get_local_mouse_position())
 	match PlayerActions.current_action:
-		"dig", "crop":
-			_set_tile_action(clicked_cell)
+		"dig":
+			_set_tile_action(clicked_cell, "res://preloads/dig_icon.tscn")
+		"crop":
+			_set_tile_action(clicked_cell, "res://preloads/plant_icon.tscn")
 		"chop":
 			_set_chop_action(clicked_cell)
 		"arbol":

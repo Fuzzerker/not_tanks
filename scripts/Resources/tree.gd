@@ -7,11 +7,23 @@ class_name Arbol
 var base_scale: float = 0.5
 var max_scale: float = 2.0
 var base_position: Vector2  # Store the original base position for upward scaling
+var _self_setup = false
 
 
-
-func _init():
-	# Arbol-specific initialization
+func _init(_position = null):
+	if _position != null:
+		position = _position
+		_setup_self()
+	
+	
+	
+	
+func populate_from(data:Dictionary):
+	super(data)
+	_setup_self()
+	
+func _setup_self():
+	
 	entity_type = EntityTypes.EntityType.ARBOL
 	max_health = 10000
 	health = 1
@@ -19,15 +31,21 @@ func _init():
 	max_total_gro = 20000
 	total_gro = 1
 	PlantManager._register(self)
-
-# Override to provide arbol-specific info
-func _get_info() -> Dictionary:
-	var info: Dictionary = super._get_info()
-	info["base_scale"] = base_scale
-	info["max_scale"] = max_scale
-	info["current_scale"] = _calculate_scale()
-	info["base_position"] = base_position
-	return info
+	
+	var terrain_gen = WorkCallbackFactory._get_terrain_gen()
+	marker = terrain_gen.tree_icon.instantiate()
+	terrain_gen.add_child(marker)
+	
+	marker.position = position
+	cell = terrain_gen.local_to_map(position)
+	
+	position = marker.position
+	
+	# Add to scene and register with plant manager
+	terrain_gen.add_child(self)
+	update_scale()
+	PlantManager._register(self)
+	
 
 # Calculate scale based on health
 func _calculate_scale() -> float:
@@ -54,24 +72,3 @@ func update_scale() -> void:
 		# Apply scale and position adjustment
 		marker.scale = Vector2(new_scale, new_scale)
 		marker.position = Vector2(base_position.x, base_position.y + y_offset)
-
-# Override serialize to include arbol-specific data
-func serialize() -> Dictionary:
-	var data: Dictionary = super.serialize()
-	data["base_scale"] = base_scale
-	data["max_scale"] = max_scale
-	data["base_position"] = {"x": base_position.x, "y": base_position.y}
-	return data
-
-# Override deserialize to handle arbol-specific data
-func deserialize(data: Dictionary) -> void:
-	super.deserialize(data)
-	if data.has("base_scale"):
-		base_scale = data.base_scale
-	if data.has("max_scale"):
-		max_scale = data.max_scale
-	if data.has("base_position"):
-		base_position = Vector2(data.base_position.x, data.base_position.y)
-	
-	# Update scale after deserialization
-	update_scale()

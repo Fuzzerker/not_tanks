@@ -9,6 +9,7 @@ var state_history: Array[String] = []
 var max_history: int = 10
 
 
+
 # Add a transition from one state to another
 func add_transition(from_state: State, to_state: State, condition: Callable, description: String):
 	var transition = Transition.new(to_state, condition, description)

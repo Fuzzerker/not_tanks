@@ -34,13 +34,8 @@ static func _create_dig_callback(cell: Vector2i, marker: Sprite2D) -> Callable:
 	return func():
 		terrain_gen.set_cell(cell, 0, Vector2i(13, 2))  # water_atlas
 		marker.queue_free()
-		var req := WorkRequest.new()
-		req.type = "collect_agua"
-		req.cell = cell
-		req.position = marker.position
-		req.effort = 100
+		WorkRequest.new("collect_agua", cell, marker.position)
 
-		WorkQueue._add_work(req)
 
 
 # Create plant callback from command data  
@@ -112,13 +107,8 @@ static func _create_chop_callback(cell, marker) -> Callable:
 				else:
 					# Tree still has health - the current job is complete, but we keep the marker
 					# and create another chop request using the same marker
-					var req := WorkRequest.new()
-					req.type = "chop"
-					req.cell = plant.cell
-					req.position = plant.position
-					req.effort = 100
-					req.marker = marker
-					WorkQueue._add_work(req)
+					WorkRequest.new("chop", plant.cell, plant.position, "res://preloads/chop_icon.tscn")
+					
 				break
 
 # Create collect_agua callback from command data

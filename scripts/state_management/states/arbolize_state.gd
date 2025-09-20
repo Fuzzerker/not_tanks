@@ -73,23 +73,9 @@ func _plant_tree() -> void:
 	print("[%s] Planting a tree! Stamina: %d" % [character.character_name, character.stamina])
 	
 	# Get terrain gen reference
-	var terrain_gen = character.terrain_gen
-	if terrain_gen == null:
-		push_warning("Cleric has no terrain_gen reference")
-		return
-	
-	# Create tree marker at current position
-	var marker = terrain_gen._make_icon(terrain_gen.tree_icon, terrain_gen.local_to_map(character.position))
-	
+
 	# Create and register the arbol
-	var arbol = Arbol.new()
-	arbol.marker = marker
-	arbol.cell = terrain_gen.local_to_map(character.position)
-	arbol.position = marker.position
-	
-	# Add to scene and register with plant manager
-	terrain_gen.add_child(arbol)
-	arbol.update_scale()
-	PlantManager._register(arbol)
+	var arbol = Arbol.new(character.position)
+
 	
 	print("[%s] Successfully planted tree at %s" % [character.character_name, character.position])

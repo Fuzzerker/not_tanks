@@ -112,42 +112,8 @@ func _grow_crop(plant: Plant) -> void:
 	else: if not plant.agua_request_generated:
 		# Request water if crop has none
 		plant.agua_request_generated = true
-		var req := WorkRequest.new()
-		req.type = "agua"
-		req.cell = plant.cell
-		req.position = plant.position
-		req.effort = 600
-		var terrain_gen = WorkCallbackFactory._get_terrain_gen()
-		req.marker = terrain_gen._make_icon(terrain_gen.agua_icon,plant.cell)
-		
-		# Store command data for serialization
-		req.command_data = {
-			"plant_id": plant.get_instance_id()
-		}
-		
-		WorkQueue._add_work(req)
+		WorkRequest.new("agua", plant.cell, plant.position, "res://preloads/agua_icon.tscn", 600)
+
 		
 	if plant.total_gro >= plant.max_total_gro:
-		var req := WorkRequest.new()
-		req.type = "harvest"
-		req.cell = plant.cell
-		req.position = plant.position
-		req.effort = 100
-		WorkQueue._add_work(req)
-		return
-
-
-
-# Helper method for save system to get all plants
-func _get_all_plants() -> Array[Plant]:
-	return _plants.duplicate()
-
-# Helper method for save system to clear all plants
-func _clear_all_plants() -> void:
-	# First queue_free all plant markers and plants
-	for plant in _plants:
-		if plant.marker != null:
-			plant.marker.queue_free()
-		plant.queue_free()
-	# Clear the array
-	_plants.clear()
+		WorkRequest.new("harvest", plant.cell, plant.position)

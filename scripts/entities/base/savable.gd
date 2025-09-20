@@ -1,6 +1,5 @@
 extends Sprite2D
 
-
 var id = -1
 
 
@@ -59,7 +58,8 @@ func _populate_next() -> bool:
 			var nums = _parse_paren_formatted_values(data)
 			data = Color(nums[0], nums[1], nums[2], nums[3])
 		
-			
+		if prop_key == "position":
+			print("setting positiong to ", data)
 		set(prop_key, data)
 		
 			
@@ -82,6 +82,7 @@ func _parse_paren_formatted_values(str:String) -> Array:
 	return return_vals
 	
 var props_to_ignore = [
+	"props_to_ignore",
 	"texture",
 	"terrain_gen", 
 	"transform",
@@ -91,20 +92,21 @@ var props_to_ignore = [
 	"global_transform",
 	"global_position",
 	"global_scale",
-	"state_machine",
 	"populating_inddex",
 	"populating_data",
-	"populating_keys"
+	"populating_keys",
+	"state_machine"
 ]
 			
 func get_info():
 	var dict := {}
 	for prop in get_property_list():
-
+		
 		var name = prop.name
 		if props_to_ignore.has(name):
 			continue
 		var val = get(name)
-		if val:
+		if val != null:
 			dict[name]=val
+				
 	return dict
