@@ -1,13 +1,13 @@
 class_name RestState
 extends State
 
-var character: WorkingCharacter
+var character: Character
 var rest_location: Vector2 = Vector2.ZERO
 var rest_timer: float = 0.0
 var rest_duration: float = 1.0  # How often to restore stamina
 
 
-func _init(char: WorkingCharacter):
+func _init(char: Character):
 	character = char
 
 func execute() -> void:

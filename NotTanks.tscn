@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://by3dirgdn0xiw"]
+[gd_scene load_steps=24 format=3 uid="uid://by3dirgdn0xiw"]
 
 [ext_resource type="Texture2D" uid="uid://csryrkfj4lfga" path="res://sprites/maptiles.png" id="1_v4jwb"]
 [ext_resource type="Script" uid="uid://c6mx4agli1n6c" path="res://scripts/ui/camera_control.gd" id="2_45neo"]
@@ -909,6 +909,10 @@ region = Rect2(32, 160.553, 32, 32)
 atlas = ExtResource("2_p13fv")
 region = Rect2(0, 64.553, 32, 32)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_fighter"]
+atlas = ExtResource("2_p13fv")
+region = Rect2(33.737, 31.553, 32, 32)
+
 [node name="Node2D" type="Node2D"]
 
 [node name="TileMapLayer" type="TileMapLayer" parent="." node_paths=PackedStringArray("mous_pos_label")]
@@ -1045,6 +1049,14 @@ theme = SubResource("Theme_q56mv")
 [node name="BuildCutter" type="TextureButton" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerCutter"]
 layout_mode = 2
 texture_normal = SubResource("AtlasTexture_cutter")
+
+[node name="PanelContainerFighter" type="PanelContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons"]
+layout_mode = 2
+theme = SubResource("Theme_q56mv")
+
+[node name="BuildFighter" type="TextureButton" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerFighter"]
+layout_mode = 2
+texture_normal = SubResource("AtlasTexture_fighter")
 
 [node name="PanelContainer3" type="PanelContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons"]
 layout_mode = 2
@@ -1235,7 +1247,7 @@ layout_mode = 2
 layout_mode = 2
 text = "Speed +"
 
-[node name="InfoPane" type="PanelContainer" parent="CanvasLayer" node_paths=PackedStringArray("orker_deets", "cleric_deets", "rat_deets", "game_tilemap")]
+[node name="InfoPane" type="PanelContainer" parent="CanvasLayer" node_paths=PackedStringArray("game_tilemap")]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -1246,9 +1258,6 @@ offset_top = -40.0
 grow_horizontal = 0
 grow_vertical = 0
 script = ExtResource("9_3fx1h")
-orker_deets = NodePath("HBoxContainer/VBoxContainer2/PanelContainer3/orker_deets")
-cleric_deets = NodePath("HBoxContainer/VBoxContainer2/PanelContainer4/cleric_deets")
-rat_deets = NodePath("HBoxContainer/VBoxContainer2/PanelContainer5/rat_deets")
 game_tilemap = NodePath("../../TileMapLayer")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/InfoPane"]
@@ -1295,6 +1304,7 @@ layout_mode = 2
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer2/BuildOrker" to="TileMapLayer" method="_on_build_worker_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerFarmer/BuildFarmer" to="TileMapLayer" method="_on_build_farmer_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerCutter/BuildCutter" to="TileMapLayer" method="_on_build_cutter_pressed"]
+[connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerFighter/BuildFighter" to="TileMapLayer" method="_on_build_fighter_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer3/SpawnRat" to="TileMapLayer" method="_on_spawn_rat_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer4/SpawnFox" to="TileMapLayer" method="_on_spawn_fox_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer5/Tree" to="TileMapLayer" method="_on_tree_pressed"]

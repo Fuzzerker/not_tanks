@@ -6,6 +6,7 @@ var characters: Array = []
 
 func _add_character(character) -> void:
 	characters.push_back(character)
+	InformationRegistry._register(character)
 	
 func _get_closest_cleric(pos: Vector2) -> Vector2:
 	var closest_cleric = SpatialUtils.find_closest_by_type(characters, pos, EntityTypes.EntityType.CLERIC)

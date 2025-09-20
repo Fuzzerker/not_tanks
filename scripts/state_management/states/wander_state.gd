@@ -1,24 +1,25 @@
 class_name WanderState
 extends State
 
-var character: WorkingCharacter
+var character: Character
 var wander_target: Vector2 = Vector2.ZERO
 var wander_start: Vector2 = Vector2.ZERO
 
-func _init(char: WorkingCharacter):
+func _init(char: Character):
 	character = char
 
 func execute() -> void:
-	if character.house == null:
-		character.house = _find_house()
+	if character is WorkingCharacter:
+		if character.house == null:
+			character.house = _find_house()
+			
+		if character.active_work != null:
+			return
+			
+		_try_find_work()
 		
-	if character.active_work != null:
-		return
-		
-	_try_find_work()
-	
-	if character.active_work != null:
-		return
+		if character.active_work != null:
+			return
 	
 	# Move toward wander target if we have one
 	if wander_target != Vector2.ZERO:

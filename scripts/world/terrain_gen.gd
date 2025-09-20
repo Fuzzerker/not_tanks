@@ -24,6 +24,9 @@ var farmer = preload("res://preloads/farmer.tscn")
 var build_cutter = preload("res://preloads/build_cutter.tscn")
 var cutter = preload("res://preloads/cutter.tscn")
 
+var build_fighter = preload("res://preloads/build_fighter.tscn")
+var fighter = preload("res://preloads/fighter.tscn")
+
 var rat = preload("res://preloads/rat.tscn")
 var fox = preload("res://preloads/fox.tscn")
 
@@ -202,6 +205,17 @@ func _place_cutter() -> void:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			add_child(cl)
 
+func _place_fighter() -> void:
+	for i in range(0,1):
+		if Store._buy_fighter():
+			var cl = fighter.instantiate()
+			cl.position = get_local_mouse_position()
+			if bcl != null:
+				bcl.queue_free()
+			PlayerActions.current_action = ""
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+			add_child(cl)
+
 func _place_rat() -> void:
 	var rat_instance = rat.instantiate()
 	rat_instance.position = get_local_mouse_position()
@@ -301,6 +315,8 @@ func _tilemap_click() -> void:
 			_place_farmer()
 		"place_cutter":
 			_place_cutter()
+		"place_fighter":
+			_place_fighter()
 		"place_rat":
 			_place_rat()
 		"place_fox":
@@ -395,6 +411,12 @@ func _on_build_cutter_pressed() -> void:
 	bcl = build_cutter.instantiate()
 	get_parent().add_child(bcl)
 	PlayerActions.current_action = "place_cutter"
+
+func _on_build_fighter_pressed() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	bcl = build_fighter.instantiate()
+	get_parent().add_child(bcl)
+	PlayerActions.current_action = "place_fighter"
 
 func _on_build_smithy_pressed() -> void:
 	PlayerActions.current_action = "place_smithy"

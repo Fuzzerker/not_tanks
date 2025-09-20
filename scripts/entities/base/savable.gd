@@ -21,9 +21,9 @@ func _ready():
 
 		
 func populate_from(dict:Dictionary):
-	var vec_props = []
-	var color_props = []
-	var props := {}
+	var _vec_props = []
+	var _color_props = []
+	var _props := {}
 	for prop in get_property_list():
 		if dict.has(prop.name):
 			var data = dict.get(prop.name)
@@ -36,11 +36,11 @@ func populate_from(dict:Dictionary):
 			set(prop.name, data)
 			
 
-func _parse_paren_formatted_values(str:String) -> Array:
-	str=str.replace("(", "")
-	str=str.replace(")", "")
+func _parse_paren_formatted_values(str_value:String) -> Array:
+	str_value=str_value.replace("(", "")
+	str_value=str_value.replace(")", "")
 	
-	var nums = str.split(",")
+	var nums = str_value.split(",")
 	var return_vals = []
 	for num: String in nums:
 		if num.contains("."):
@@ -70,11 +70,15 @@ func get_info():
 	var dict := {}
 	for prop in get_property_list():
 		
-		var name = prop.name
-		if props_to_ignore.has(name):
+		var prop_name = prop.name
+		if props_to_ignore.has(prop_name):
 			continue
-		var val = get(name)
+		var val = get(prop_name)
 		if val != null:
-			dict[name]=val
+			dict[prop_name]=val
 				
 	return dict
+
+# Alias for UI compatibility
+func _get_info():
+	return get_info()

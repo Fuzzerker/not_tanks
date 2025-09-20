@@ -1,12 +1,12 @@
 class_name EatState
 extends State
 
-var character: WorkingCharacter
+var character: Character
 var food_source: Node2D = null
 var eating_timer: float = 0.0
 var eating_duration: float = 2.0  # Time to spend eating
 
-func _init(char: WorkingCharacter):
+func _init(char: Character):
 	character = char
 
 func execute() -> void:

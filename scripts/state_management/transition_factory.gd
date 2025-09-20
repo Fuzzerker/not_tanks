@@ -1,23 +1,19 @@
 class_name ConditionFactory
 
 # Create condition functions for common scenarios
-static func stamina_low(character: WorkingCharacter, threshold: int = 0) -> Callable:
+static func stamina_low(character: Character, threshold: int = 0) -> Callable:
 	return func() -> bool:
 		return character.stamina <= threshold
 
-static func stamina_full(character: WorkingCharacter) -> Callable:
+static func stamina_full(character: Character) -> Callable:
 	return func() -> bool:
 		return character.stamina >= character.max_stamina
-
-static func work_available(character: WorkingCharacter) -> Callable:
-	return func() -> bool:
-		return WorkQueue._claim_work(character.position, character.entity_type) != null
 
 static func has_work_assigned(character: WorkingCharacter) -> Callable:
 	return func() -> bool:
 		return character.active_work != null
 
-static func hunger_critical(character: WorkingCharacter, threshold: int = 20) -> Callable:
+static func hunger_critical(character: Character, threshold: int = 20) -> Callable:
 	return func() -> bool:
 		return character.hunger <= threshold
 

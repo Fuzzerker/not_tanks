@@ -3,10 +3,6 @@ extends PanelContainer
 const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
 
-@export var orker_deets:Label
-@export var cleric_deets:Label
-@export var rat_deets:Label
-
 var margin: float = .5
 
 @export var game_tilemap: TileMapLayer = null
@@ -15,50 +11,31 @@ var vboxChild: VBoxContainer = null
 var cur_gen = null
 
 func _ready() -> void:
-	Resources.seeds = 1000
 	vboxChild = get_child(0).get_child(0) as VBoxContainer
 
-var log_interval: float = 2.0
-var time_accrual: float = 0.0
-
 func _get_one_at_position():
+	var mouse_pos = game_tilemap.get_global_mouse_position()
+	
 	for infoable in InformationRegistry.infoables:
-
 		if _unsafe(infoable):
 			continue
-		var infoable_type = infoable.get("entity_type")
-		
+			
 		var sprite_to_use: Sprite2D = null
-		if infoable_type == EntityTypes.EntityType.CROP or infoable_type == EntityTypes.EntityType.ARBOL:
-			# Additional safety check for marker access
-			if infoable.has_method("get") and infoable.get("marker") != null and is_instance_valid(infoable.marker):
-				sprite_to_use = infoable.marker
-			else:
-				continue  # Skip this infoable if marker is invalid
-		elif infoable_type == EntityTypes.EntityType.SMITHY or infoable_type == EntityTypes.EntityType.HOUSE:
-			# Buildings have markers like plants
-			if infoable.has_method("get") and infoable.get("marker") != null and is_instance_valid(infoable.marker):
-				sprite_to_use = infoable.marker
-			else:
-				continue  # Skip this infoable if marker is invalid
+		
+		# Determine which sprite to use for collision detection
+		if infoable.has_method("get") and infoable.get("marker") != null and is_instance_valid(infoable.marker):
+			# Entities with markers (plants, buildings)
+			sprite_to_use = infoable.marker
 		else:
+			# Direct sprite entities (characters, animals)
 			sprite_to_use = infoable
-		#print(infoable, " pos: ", infoable.position, " mouse_pos: ", global, " ", " hasPoint ", infoable.get_rect().has_point(global))
-
-		var global_rect: Rect2 = sprite_to_use.get_rect().abs()  # ensure positive size
+			
+		# Check if mouse is over this entity
+		var global_rect: Rect2 = sprite_to_use.get_rect().abs()
 		global_rect = sprite_to_use.get_global_transform() * global_rect
-		var has_point: bool = global_rect.has_point(game_tilemap.get_global_mouse_position())
+		var has_point: bool = global_rect.has_point(mouse_pos)
 		
-		
-		var txt_str: String = str(EntityTypes.type_to_string(infoable_type)," \ntm_global_mouse_pos: ", Vector2i(game_tilemap.get_global_mouse_position()), " \nglobal_rect: ", Rect2i(global_rect), "\nhas_point: ",has_point)
-		if infoable_type == EntityTypes.EntityType.CROP or infoable_type == EntityTypes.EntityType.ARBOL:
-			orker_deets.text =txt_str
-		if infoable_type == EntityTypes.EntityType.CLERIC:
-			cleric_deets.text =txt_str
-		if infoable_type == EntityTypes.EntityType.RAT:
-			rat_deets.text =txt_str
-		
-		if  has_point:
+		if has_point:
 			return infoable
 	return null
 	
@@ -96,16 +73,17 @@ func _unsafe(infoable) -> bool:
 
 func _process(_delta: float) -> void:
 	var under_mouse = _get_one_at_position()
-	var under_mouse_null: bool = under_mouse == null
-	var under_mouse_has__get_info: bool = false
-	var under_mouse__get_info_null: bool = true
-	if not under_mouse_null:
-		under_mouse_has__get_info = under_mouse.has_method("_get_info")
-	if not under_mouse_null and under_mouse_has__get_info:
-		under_mouse__get_info_null = under_mouse._get_info() == null
-	#print("under_mouse_null ", under_mouse_null, " under_mouse_has__get_info ", under_mouse_has__get_info, " under_mouse__get_info_null ", under_mouse__get_info_null)
-	if not under_mouse_null and under_mouse_has__get_info and not under_mouse__get_info_null:
-		cur_gen = under_mouse
+	
+	# Only update if we have a valid entity under the mouse with _get_info method
+	if under_mouse != null and under_mouse.has_method("_get_info"):
+		var info_data = under_mouse._get_info()
+		if info_data != null and not info_data.is_empty():
+			cur_gen = under_mouse
+		else:
+			cur_gen = null
+	else:
+		cur_gen = null
+		
 	if cur_gen != null:
 		_generate_ui()
 		
@@ -113,22 +91,35 @@ func _process(_delta: float) -> void:
 		
 
 func _generate_ui() -> void:
-	
 	if cur_gen == null:
 		return
+		
+	# Clear existing UI elements
 	for existing: Node in vboxChild.get_children():
 		existing.queue_free()
 	
 	var props: Dictionary = cur_gen._get_info()
+	if props.is_empty():
+		return
 
+	# Add entity type header
+	var entity_type = "Unknown"
+	if cur_gen.has_method("get") and cur_gen.get("entity_type") != null:
+		entity_type = EntityTypes.type_to_string(cur_gen.get("entity_type"))
+	
+	var header_label = Label.new()
+	header_label.text = entity_type.capitalize()
+	header_label.add_theme_font_size_override("font_size", 16)
+	header_label.add_theme_color_override("font_color", Color.WHITE)
+	vboxChild.add_child(header_label)
+
+	# Add properties
 	for key in props:
-		var ra_val = props[key]
-		if ra_val is Vector2:
-			ra_val = Vector2i(ra_val)
-		if ra_val is Rect2:
-			ra_val = Rect2i(ra_val)
+		var value = props[key]
 		
-		var str_val: String = str(ra_val)
+		# Format the value for display
+		var formatted_value = _format_value_for_display(value)
+		
 		var margin_container: MarginContainer = MarginContainer.new()
 		margin_container.add_theme_constant_override("margin_left", margin)
 		margin_container.add_theme_constant_override("margin_right", margin)
@@ -138,15 +129,34 @@ func _generate_ui() -> void:
 		var hbox: HBoxContainer = HBoxContainer.new()
 		
 		var key_label: Label = Label.new()
-		key_label.text = str(key) + ":"
+		key_label.text = _format_key_name(key) + ":"
 		key_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		key_label.add_theme_color_override("font_color", Color.LIGHT_GRAY)
 
 		var value_label: Label = Label.new()
-		value_label.text = str_val
+		value_label.text = formatted_value
 		value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		value_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 		hbox.add_child(key_label)
 		hbox.add_child(value_label)
 
 		margin_container.add_child(hbox)
 		vboxChild.add_child(margin_container)
+
+func _format_value_for_display(value) -> String:
+	if value is Vector2:
+		return "(" + str(int(value.x)) + ", " + str(int(value.y)) + ")"
+	elif value is Rect2:
+		var rect = Rect2i(value)
+		return "(" + str(rect.position.x) + ", " + str(rect.position.y) + ", " + str(rect.size.x) + ", " + str(rect.size.y) + ")"
+	elif value is Color:
+		return "R:%.2f G:%.2f B:%.2f A:%.2f" % [float(value.r), float(value.g), float(value.b), float(value.a)]
+	elif value is bool:
+		return "Yes" if value else "No"
+	else:
+		return str(value)
+
+func _format_key_name(key: String) -> String:
+	# Convert snake_case to Title Case
+	return key.replace("_", " ").capitalize()
