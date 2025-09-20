@@ -21,7 +21,8 @@ func _ready():
 func _register(savable):
 	savables.push_back(savable)
 	
-
+func remove_savable(savable):
+	savables.erase(savable)
 # Save the current game state to a named file
 func save_game(save_name: String) -> bool:
 	if save_name.is_empty():
@@ -127,12 +128,17 @@ func _restore_game_state(save_data: Array):
 			inst = Arbol.new()
 		else: if entity_type == "crop":
 			inst = Plant.new()
+		else: if entity_type == "workrequest":
+			inst = WorkRequest.from_dict(item)
+		else: if entity_type == "house" or entity_type == "smithy":
+			inst = Building.from_dict(item)
 		else:
 			var prel = load("res://preloads/"+entity_type+".tscn")
 			inst = prel.instantiate()
-		
-		inst.populate_from(item)
-		WorkCallbackFactory._get_terrain_gen().add_child(inst)
+		if inst.has_method("populate_from"):
+			inst.populate_from(item)
+		if inst is Node : 
+			WorkCallbackFactory._get_terrain_gen().add_child(inst)
 		print(entity_type)
 	
 	return

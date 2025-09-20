@@ -20,53 +20,21 @@ func _ready():
 	
 
 		
-func populate_from(data:Dictionary):
-	for key in data.keys():
-		populating_keys.push_back(key)
-		populating_data.push_back(data.get(key))
-		
-	while _populate_next():
-		continue
-		
-	
-	
-			
-func _populate_next() -> bool:
-	
-	if populating_inddex >= populating_keys.size():
-		return false
-		
-	var prop_key = populating_keys[populating_inddex]
+func populate_from(dict:Dictionary):
 	var vec_props = []
 	var color_props = []
 	var props := {}
 	for prop in get_property_list():
-		if prop.type == TYPE_VECTOR2:
-			vec_props.push_back(prop.name)
-		if prop.type == TYPE_COLOR:
-			color_props.push_back(prop.name)
+		if dict.has(prop.name):
+			var data = dict.get(prop.name)
+			if prop.type == TYPE_VECTOR2:
+				var nums = _parse_paren_formatted_values(data)
+				data = Vector2(nums[0], nums[1])
+			if prop.type == TYPE_COLOR:
+				var nums = _parse_paren_formatted_values(data)
+				data = Color(nums[0], nums[1], nums[2], nums[3])
+			set(prop.name, data)
 			
-		props[prop.name] = true
-	
-	if props.has(prop_key):
-		var data = populating_data[populating_inddex]
-		
-		if vec_props.has(prop_key):
-			var nums = _parse_paren_formatted_values(data)
-			data = Vector2(nums[0], nums[1])
-		if color_props.has(prop_key):
-			var nums = _parse_paren_formatted_values(data)
-			data = Color(nums[0], nums[1], nums[2], nums[3])
-		
-		if prop_key == "position":
-			print("setting positiong to ", data)
-		set(prop_key, data)
-		
-			
-	
-	populating_inddex+=1
-	
-	return populating_inddex < populating_keys.size()
 
 func _parse_paren_formatted_values(str:String) -> Array:
 	str=str.replace("(", "")

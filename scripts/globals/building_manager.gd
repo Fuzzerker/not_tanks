@@ -8,6 +8,12 @@ var buildings: Array[Building] = []
 
 func flush():
 	buildings = []
+	
+func process_tick():
+	for bld in buildings:
+		if bld.entity_type == EntityTypes.EntityType.SMITHY:
+			if not WorkQueue._has_work(bld.start_cell):
+				WorkRequest.new("smithing", bld.start_cell, bld.position)
 # Building type configurations
 var building_configs = {
 	"smithy": {
@@ -63,14 +69,7 @@ func _configure_building_sprite(marker: Sprite2D, building_type: String) -> void
 		atlas_texture.region = Rect2(Vector2.ZERO, region_size)
 		marker.texture = atlas_texture
 
-# Create construction work for a building
-func _create_construction_work(building: Building) -> void:
-	var terrain_gen = _get_terrain_gen()
-	if terrain_gen == null:
-		return
-	
-	# Delegate to terrain generator to create construction work with icons
-	terrain_gen._create_building_construction_work(building)
+
 
 # Handle completion of construction work on a single tile
 func _complete_construction_work(building: Building, _completed_cell: Vector2i) -> void:
@@ -114,30 +113,3 @@ func _get_terrain_gen():
 				return terrain_gen
 	
 	return null
-
-# Serialization methods
-func serialize() -> Dictionary:
-	var building_data = []
-	for building in buildings:
-		building_data.append(building.serialize())
-	
-	return {
-		"buildings": building_data
-	}
-
-func deserialize(data: Dictionary) -> void:
-	buildings.clear()
-	
-	if data.has("buildings"):
-		for building_data in data.buildings:
-			var building = Building.new()
-			building.deserialize(building_data)
-			_register_building(building)
-
-# Helper method for save system
-func _get_all_buildings() -> Array[Building]:
-	return buildings.duplicate()
-
-# Helper method for save system
-func _clear_all_buildings() -> void:
-	buildings.clear()

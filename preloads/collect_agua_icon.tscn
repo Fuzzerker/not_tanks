@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://uk7j32qog0vv"]
+
+[ext_resource type="Texture2D" uid="uid://csryrkfj4lfga" path="res://sprites/maptiles.png" id="1_gm11a"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g1p4y"]
+atlas = ExtResource("1_gm11a")
+region = Rect2(205.119, 33.048, 16, 16)
+
+[node name="CollectAguaIcon" type="Sprite2D"]
+scale = Vector2(0.5, 0.5)
+texture = SubResource("AtlasTexture_g1p4y")

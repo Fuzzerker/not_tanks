@@ -6,7 +6,13 @@ var planting_chance: float = 0.9
 
 func _init(char: WorkingCharacter):
 	super(char)
-	wander_start = char.position
+	if char.custom_wander_start != null:
+		var cust_start = char.custom_wander_start.replace("(", "")
+		
+		wander_start = char.custom_wander_start
+	else:
+		wander_start = char.position
+		char.custom_wander_start = wander_start
 
 var returned_home = true
 

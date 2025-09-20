@@ -21,9 +21,11 @@ static func create_callback(type: String, cell: Vector2i, marker: Sprite2D) -> C
 		"chop":
 			return _create_chop_callback(cell, marker)
 		"collect_agua":
-			return _create_collect_agua_callback(cell)
+			return _create_collect_agua_callback(cell, marker)
 		"construction":
 			return _create_construction_callback(cell, marker)
+		"smithing":
+			return _create_smithing_callback(cell, marker)
 		_:
 			push_warning("Unknown work type: " + type)
 			return Callable()
@@ -32,9 +34,9 @@ static func create_callback(type: String, cell: Vector2i, marker: Sprite2D) -> C
 static func _create_dig_callback(cell: Vector2i, marker: Sprite2D) -> Callable:
 	var terrain_gen = _get_terrain_gen()
 	return func():
-		terrain_gen.set_cell(cell, 0, Vector2i(13, 2))  # water_atlas
+		 # water_atlas
 		marker.queue_free()
-		WorkRequest.new("collect_agua", cell, marker.position)
+		WorkRequest.new("collect_agua", cell, marker.position, "res://preloads/collect_agua_icon.tscn", 100, Vector2(1,1))
 
 
 
@@ -111,16 +113,20 @@ static func _create_chop_callback(cell, marker) -> Callable:
 					
 				break
 
+static func _create_smithing_callback(cell, marker) -> Callable:
+	return func():
+		Resources.sords += 1
+		marker.queue_free()
+
 # Create collect_agua callback from command data
-static func _create_collect_agua_callback(cell) -> Callable:
+static func _create_collect_agua_callback(cell, marker) -> Callable:
 	return func():
 		var terrain_gen = _get_terrain_gen()
 		if terrain_gen != null:
 			# Remove agua from global resources and revert tile to dirt
 			if Resources.agua > 0:
 				Resources.agua -= 1
-			terrain_gen.set_cell(cell, 0, terrain_gen.dirt_atlas)
-			terrain_gen.agua_tiles.erase(cell)
+			marker.queue_free()
 			
 				
 				# Give agua to the farmer who completed this work
@@ -130,13 +136,13 @@ static func _create_collect_agua_callback(cell) -> Callable:
 # Create construction callback from command data
 static func _create_construction_callback(cell, marker) -> Callable:
 	return func():
-		
 			# Find the building and handle construction completion
 		for building in BuildingManager.buildings:
 			if building.occupied_cells.has(cell):
 				# Call the building manager's completion function
 				BuildingManager._complete_construction_work(building, cell)
 				marker.queue_free()
+
 				break
 
 # Helper to get terrain generator - shared logic between both systems

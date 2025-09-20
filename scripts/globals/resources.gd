@@ -5,6 +5,7 @@ var agua: int = 0
 var seeds: int = 5
 var food: int = 0
 var logs: int = 0
+var sords: int = 0
 
 # Serialize resources data for saving
 func serialize() -> Dictionary:

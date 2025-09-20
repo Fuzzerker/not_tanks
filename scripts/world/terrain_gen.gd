@@ -129,16 +129,13 @@ func _set_chop_action(clicked_cell: Vector2i) -> void:
 	var arbol = _find_arbol_at_position(map_to_local(clicked_cell))
 	if arbol == null:
 		return  # No arbol to chop
-	
-	# Check if there's already a chop job for this specific arbol
-	if WorkQueue._has_chop_work_for_arbol(arbol.get_instance_id()):
-		return  # This arbol already has a chop job
+
 	var arbol_cell = arbol.cell
 	# Check if there's already work at this specific cell (for other job types)
 	if WorkQueue._has_work(arbol_cell):
 		return
 	
-	WorkRequest.new("chop", arbol_cell, map_to_local(arbol_cell), "res://preloads/chop_icon/tscn" )
+	WorkRequest.new("chop", arbol_cell, map_to_local(arbol_cell), "res://preloads/chop_icon.tscn" )
 	
 	
 	
@@ -225,87 +222,7 @@ func _place_arbol() -> void:
 # --- BUILDING PLACEMENT ------------------------------------------------------
 
 # Calculate which tiles are occupied by a building sprite using BuildingManager dimensions
-func _calculate_occupied_cells(marker: Sprite2D, building_type: String = "") -> Array[Vector2i]:
-	var occupied_cells: Array[Vector2i] = []
-	
-	# Get building dimensions from BuildingManager
-	var config = BuildingManager._get_building_config(building_type)
-	var size = config.get("dimensions", Vector2i(4, 4))
-	
-	# Configure the sprite atlas based on dimensions
-	BuildingManager._configure_building_sprite(marker, building_type)
-	
-	# Get the center tile position where the building is placed
-	var center_cell = local_to_map(marker.position)
-	
-	# Calculate the range of tiles around the center
-	# Handle both odd and even sized buildings properly
-	var start_x = -(size.x / 2)
-	var end_x = start_x + size.x
-	var start_y = -(size.y / 2)
-	var end_y = start_y + size.y
-	
-	# Generate occupied cells in a grid around the center
-	for x in range(start_x, end_x):
-		for y in range(start_y, end_y):
-			var cell_pos = center_cell + Vector2i(x, y)
-			occupied_cells.append(cell_pos)
-	
-	return occupied_cells
 
-func _place_building(building_type: String) -> void:
-	# Snap to grid like plants do
-	var clicked_cell = local_to_map(get_local_mouse_position())
-	var snapped_position = map_to_local(clicked_cell)
-	
-	var config = BuildingManager._get_building_config(building_type)
-	
-	# Create building marker first to calculate size
-	var marker_scene = config.marker_scene
-	var marker = marker_scene.instantiate()
-	
-	# Add marker to scene temporarily to get proper transform
-	add_child(marker)
-	marker.position = snapped_position
-	
-	# Calculate occupied cells using shared helper function
-	var occupied_cells = _calculate_occupied_cells(marker, building_type)
-	
-	# Remove marker temporarily - we'll add it back later
-	remove_child(marker)
-	
-	# Check if any cells are already occupied by work or other buildings
-	for cell in occupied_cells:
-		if WorkQueue._has_work(cell):
-			marker.queue_free()  # Clean up the marker
-			return  # Can't place building here
-	
-	# Add marker to scene with snapped position
-	add_child(marker)
-	marker.position = snapped_position
-	
-	# Create building
-	var building = Building.new()
-	building.building_type = building_type
-	building.position = snapped_position
-	building.marker = marker
-	building.construction_complete = false
-	
-	# Set entity type based on building type
-	match building_type:
-		"smithy":
-			building.entity_type = EntityTypes.EntityType.SMITHY
-		"house":
-			building.entity_type = EntityTypes.EntityType.HOUSE
-		_:
-			building.entity_type = EntityTypes.EntityType.SMITHY  # Default fallback
-	
-	# Register building and create construction work
-	BuildingManager._register_building(building)
-	BuildingManager._create_construction_work(building)
-	
-	# Clear the action
-	PlayerActions.current_action = ""
 
 # Create building work (construction jobs) instead of placing building directly
 func _create_building_work(building_type: String) -> void:
@@ -315,54 +232,35 @@ func _create_building_work(building_type: String) -> void:
 	
 	var config = BuildingManager._get_building_config(building_type)
 	
-	# Create building marker first to calculate size and position
-	var marker_scene = config.marker_scene
-	var marker = marker_scene.instantiate()
-	add_child(marker)
-	marker.position = snapped_position
-	
-	# Calculate occupied cells using shared helper function
-	var occupied_cells = _calculate_occupied_cells(marker, building_type)
+	var occupied_cells = SpatialUtils.calculate_occupied_cells(clicked_cell, config.get("dimensions"))
 	
 	# Check if any cells are already occupied by work or other buildings
 	for cell in occupied_cells:
 		if WorkQueue._has_work(cell):
-			marker.queue_free()  # Clean up the marker
 			return  # Can't place building here
 	
-	# Make the marker 50% translucent until construction is complete
-	marker.modulate.a = 0.5
 	
-	# Create building with marker
-	var building = Building.new()
-	building.building_type = building_type
-	building.position = snapped_position
-	building.marker = marker
-	building.construction_complete = false
-	building.occupied_cells = occupied_cells
-	
+	var entity_type: EntityTypes.EntityType
 	# Set entity type based on building type
 	match building_type:
 		"smithy":
-			building.entity_type = EntityTypes.EntityType.SMITHY
+			entity_type = EntityTypes.EntityType.SMITHY
 		"house":
-			building.entity_type = EntityTypes.EntityType.HOUSE
-		_:
-			building.entity_type = EntityTypes.EntityType.SMITHY  # Default fallback
-	
+			entity_type = EntityTypes.EntityType.HOUSE
 	# Register building and create construction work
-	BuildingManager._register_building(building)
-	BuildingManager._create_construction_work(building)
+	Building.new(building_type, clicked_cell, snapped_position,false,entity_type,"")
+
+	_create_building_construction_work(building_type, occupied_cells)
 	
 	# Clear the action
 	PlayerActions.current_action = ""
 
 # Create construction work for a building (called by BuildingManager)
-func _create_building_construction_work(building: Building) -> void:
-	var config = BuildingManager._get_building_config(building.building_type)
+func _create_building_construction_work(building_type: String, occupied_cells: Array) -> void:
+	var config = BuildingManager._get_building_config(building_type)
 	
 	# Create construction work for each tile the building occupies
-	for cell in building.occupied_cells:
+	for cell in occupied_cells:
 		# Check if there's already work at this location
 		if WorkQueue._has_work(cell):
 			continue
@@ -391,10 +289,6 @@ func _tilemap_click() -> void:
 			_set_chop_action(clicked_cell)
 		"arbol":
 			_place_arbol()
-		"place_smithy":
-			_place_building("smithy")
-		"place_house":
-			_place_building("house")
 		"build_smithy":
 			_create_building_work("smithy")
 		"build_house":

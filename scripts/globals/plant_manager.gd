@@ -6,6 +6,7 @@ var _plants: Array[Plant] = []
 
 func flush():
 	_plants = []
+	_ready()
 
 func _ready() -> void:
 	TimeManager._register(_process_tick)

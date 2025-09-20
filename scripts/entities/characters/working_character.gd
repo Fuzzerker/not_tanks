@@ -22,6 +22,7 @@ var state_machine: StateMachine
 var active_work: WorkRequest = null
 var last_work: WorkRequest = null
 var house: Building = null
+var custom_wander_start = null
 
 func _ready() -> void:
 	character_name = NameGenerator._generate_name()

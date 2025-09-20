@@ -3,6 +3,16 @@ class_name SpatialUtils
 # Import required classes
 const EntityTypes = preload("res://scripts/globals/entity_types.gd")
 
+static func calculate_occupied_cells(start_cell: Vector2i, size: Vector2i) -> Array[Vector2i]:
+	var occupied_cells: Array[Vector2i] = []
+	
+	for x in range(size.x):
+		for y in range(size.y):
+			var cell = start_cell + Vector2i(x, -y)
+			occupied_cells.append(cell)
+	
+	return occupied_cells
+
 # Generic closest entity finder with optional filter function
 static func find_closest_entity(
 	entities: Array, 

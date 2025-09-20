@@ -15,13 +15,7 @@ func _has_work(cell: Vector2i) -> bool:
 			return true
 	return false
 
-# Check if there's already a chop job for a specific arbol
-func _has_chop_work_for_arbol(arbol_id: int) -> bool:
-	for request: WorkRequest in work_requests:
-		if request.type == "chop":
-			if request.command_data.arbol_id == arbol_id:
-				return true
-	return false 
+
 
 func _abandon_work(cell):
 	for request: WorkRequest in work_requests:
@@ -31,6 +25,7 @@ func _abandon_work(cell):
 func _complete_work(request):
 	print("completing request")
 	work_requests.erase(request)
+	request.queue_free()
 
 
 	
