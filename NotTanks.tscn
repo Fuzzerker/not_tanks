@@ -913,12 +913,13 @@ region = Rect2(0, 64.553, 32, 32)
 atlas = ExtResource("2_p13fv")
 region = Rect2(33.737, 31.553, 32, 32)
 
-[node name="Node2D" type="Node2D"]
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 0
 
-[node name="TileMapLayer" type="TileMapLayer" parent="." node_paths=PackedStringArray("mous_pos_label")]
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_pgsxn")
 script = ExtResource("2_pgsxn")
-mous_pos_label = NodePath("../CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2/PanelContainer2/MousePos")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("2_45neo")
@@ -1081,6 +1082,14 @@ theme = SubResource("Theme_q56mv")
 [node name="Tree" type="Button" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer5"]
 layout_mode = 2
 text = "Tree"
+
+[node name="PanelContainerSkellysord" type="PanelContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons"]
+layout_mode = 2
+theme = SubResource("Theme_q56mv")
+
+[node name="SpawnSkellysord" type="Button" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerSkellysord"]
+layout_mode = 2
+text = "Skellysord"
 
 [node name="PanelContainerSmithy" type="PanelContainer" parent="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons"]
 layout_mode = 2
@@ -1254,43 +1263,24 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -40.0
-offset_top = -40.0
+offset_top = -54.0
+offset_right = 36.0
 grow_horizontal = 0
 grow_vertical = 0
 script = ExtResource("9_3fx1h")
 game_tilemap = NodePath("../../TileMapLayer")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/InfoPane"]
+[node name="PanelContainer" type="PanelContainer" parent="CanvasLayer/InfoPane"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/InfoPane/HBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/InfoPane/PanelContainer"]
 layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 5
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="CanvasLayer/InfoPane/HBoxContainer"]
-layout_mode = 2
-
-[node name="PanelContainer2" type="PanelContainer" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2"]
-layout_mode = 2
-
-[node name="MousePos" type="Label" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2/PanelContainer2"]
-layout_mode = 2
-
-[node name="PanelContainer3" type="PanelContainer" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2"]
-layout_mode = 2
-
-[node name="orker_deets" type="Label" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2/PanelContainer3"]
-layout_mode = 2
-
-[node name="PanelContainer4" type="PanelContainer" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2"]
-layout_mode = 2
-
-[node name="cleric_deets" type="Label" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2/PanelContainer4"]
-layout_mode = 2
-
-[node name="PanelContainer5" type="PanelContainer" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2"]
-layout_mode = 2
-
-[node name="rat_deets" type="Label" parent="CanvasLayer/InfoPane/HBoxContainer/VBoxContainer2/PanelContainer5"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/InfoPane/PanelContainer/MarginContainer"]
 layout_mode = 2
 
 [node name="GameplayMenu" parent="CanvasLayer" instance=ExtResource("13_gameplay")]
@@ -1308,6 +1298,7 @@ layout_mode = 2
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer3/SpawnRat" to="TileMapLayer" method="_on_spawn_rat_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer4/SpawnFox" to="TileMapLayer" method="_on_spawn_fox_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainer5/Tree" to="TileMapLayer" method="_on_tree_pressed"]
+[connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerSkellysord/SpawnSkellysord" to="TileMapLayer" method="_on_spawn_skellysord_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerSmithy/BuildSmithy" to="TileMapLayer" method="_on_build_smithy_pressed"]
 [connection signal="pressed" from="CanvasLayer/Panel/VBoxContainer/HBoxContainer/PlaceGroup/PlaceButtons/PanelContainerHouse/BuildHouse" to="TileMapLayer" method="_on_build_house_pressed"]
 [connection signal="pressed" from="CanvasLayer/PanelContainer/HBoxContainer/MarginContainer4/SPeed don" to="TileMapLayer" method="_on_speed_don_pressed"]

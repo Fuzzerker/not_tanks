@@ -1,0 +1,12 @@
+[gd_scene load_steps=4 format=3 uid="uid://msl5ic028dng"]
+
+[ext_resource type="Texture2D" uid="uid://bonou2se4h1b0" path="res://sprites/monsters.png" id="1_pnihx"]
+[ext_resource type="Script" uid="uid://bklx7cxucwspv" path="res://scripts/entities/enemies/skelly_sord.gd" id="2_v4py7"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7k8m1"]
+atlas = ExtResource("1_pnihx")
+region = Rect2(0.1, 128.4, 32, 32)
+
+[node name="Skellysord" type="Sprite2D"]
+texture = SubResource("AtlasTexture_7k8m1")
+script = ExtResource("2_v4py7")

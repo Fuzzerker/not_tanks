@@ -15,6 +15,7 @@ enum EntityType {
 	WORKREQUEST,
 	SMITH,
 	FIGHTER,
+	UNDEAD_CREATURE,
 }
 
 # Convert enum to string for display/serialization
@@ -46,6 +47,8 @@ static func type_to_string(entity_type: EntityType) -> String:
 			return "smith"
 		EntityType.FIGHTER:
 			return "fighter"
+		EntityType.UNDEAD_CREATURE:
+			return "undead_creature"
 		_:
 			return "unknown"
 
@@ -80,6 +83,8 @@ static func string_to_type(type_str: String) -> EntityType:
 			return EntityType.SMITH
 		"fighter":
 			return EntityType.FIGHTER
+		"undead_creature":
+			return EntityType.UNDEAD_CREATURE
 		_:
 			push_error("Unknown entity type: " + type_str)
 			return EntityType.CROP  # Default fallback

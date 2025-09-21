@@ -21,11 +21,26 @@ func _ready() -> void:
 	target_position = global_position
 	target_zoom = zoom
 	
+	# Connect to viewport size changed signal for responsive camera
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
+	
 	# Optional: Set camera limits if needed
 	# limit_left = -1000
 	# limit_right = 1000
 	# limit_top = -1000
 	# limit_bottom = 1000
+
+func _on_viewport_size_changed():
+	# Adjust camera behavior when viewport size changes
+	# This ensures the camera works properly with different window sizes
+	var viewport_size = get_viewport().get_visible_rect().size
+	
+	# Update zoom limits based on viewport size
+	# Smaller viewports might need different zoom limits
+	if viewport_size.x < 800 or viewport_size.y < 600:
+		min_zoom = 0.3  # Allow more zoom out on small screens
+	else:
+		min_zoom = 0.2  # Standard zoom out limit
 
 func _process(delta: float) -> void:
 	handle_camera_input(delta)

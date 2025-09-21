@@ -29,6 +29,7 @@ var fighter = preload("res://preloads/fighter.tscn")
 
 var rat = preload("res://preloads/rat.tscn")
 var fox = preload("res://preloads/fox.tscn")
+var skellysord = preload("res://preloads/skelly_sord.tscn")
 
 var dig_icon = preload("res://preloads/dig_icon.tscn")
 var plant_icon = preload("res://preloads/plant_icon.tscn")
@@ -230,6 +231,13 @@ func _place_fox() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	add_child(fox_instance)
 
+func _place_skellysord() -> void:
+	var skellysord_instance = skellysord.instantiate()
+	skellysord_instance.position = get_local_mouse_position()
+	PlayerActions.current_action = ""
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	add_child(skellysord_instance)
+
 func _place_arbol() -> void:
 	print("nah")
 
@@ -321,6 +329,8 @@ func _tilemap_click() -> void:
 			_place_rat()
 		"place_fox":
 			_place_fox()
+		"place_skellysord":
+			_place_skellysord()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.keycode == KEY_SPACE:
@@ -386,7 +396,7 @@ func _process(_delta: float) -> void:
 
 	if bcl:
 		bcl.position = get_global_mouse_position()
-	mous_pos_label.text = str(get_global_mouse_position())
+
 
 func _on_build_cleric_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
@@ -437,6 +447,10 @@ func _on_spawn_rat_pressed() -> void:
 func _on_spawn_fox_pressed() -> void:
 	_cancel_action()
 	PlayerActions.current_action = "place_fox"
+
+func _on_spawn_skellysord_pressed() -> void:
+	_cancel_action()
+	PlayerActions.current_action = "place_skellysord"
 
 # --- PAUSE MENU FUNCTIONALITY ------------------------------------------------
 

@@ -1,11 +1,6 @@
 extends Sprite2D
-
+class_name Savable
 var id = -1
-
-
-var populating_keys: Array = []
-var populating_data: Array = []
-var populating_inddex = 0
 
 var pop_ticks = 3
 var cur_ticks = 0
@@ -63,7 +58,8 @@ var props_to_ignore = [
 	"populating_inddex",
 	"populating_data",
 	"populating_keys",
-	"state_machine"
+	"state_machine",
+	"house"
 ]
 			
 func get_info():
@@ -78,6 +74,21 @@ func get_info():
 			dict[prop_name]=val
 				
 	return dict
+
+func get_ui_info():
+	var all_props = get_property_list()
+	var result: Dictionary = {}
+
+	for prop in all_props:
+		# Skip built-ins (they usually have "usage" flags and categories set)
+		# User-defined variables will have the "script_var" flag
+		if prop.has("usage") and (prop.usage & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
+			if prop.name == "entity_type":
+				result[prop.name] = EntityTypes.type_to_string(get(prop.name))
+			else:
+				result[prop.name] = get(prop.name)
+
+	return result
 
 # Alias for UI compatibility
 func _get_info():
